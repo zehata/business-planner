@@ -1,0 +1,8 @@
+[package]
+name = "usage-rates"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bigdecimal = "0.4.9"
+jiff = "0.2.16"
