@@ -18,7 +18,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_psql_reader() {
-        let builder = PgTempDBBuilder::default().with_bin_path("/usr/lib/postgresql/18/bin");
+        let builder = PgTempDBBuilder::default().with_bin_path("/usr/lib/postgresql/16/bin");
         let db = builder.start_async().await;
         let pool = PgPoolOptions::new()
             .max_connections(5)
