@@ -15,12 +15,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: extractions/setup-just@v3
-    - name: Install nextest
-      run: cargo install cargo-nextest --locked
-    - name: Install llvm-cov
-      run: cargo install cargo-llvm-cov --locked
+    - uses: cargo-bins/cargo-binstall@main
+
+    - name: Install postgres
+      run: sudo apt install -y postgresql postgresql-client
+    - name: Update path
+      run: find /usr/lib/postgresql/ -type d -name "bin" >> $GITHUB_PATH
+    
+    - name: Install testing toolchains
+      run: cargo binstall cargo-nextest cargo-llvm-cov --no-confirm --locked
+
     - name: Run tests
       run: just test
+    
     - name: Codecov
       uses: codecov/codecov-action@v5
       with:
