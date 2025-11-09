@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["usage-rates"]
+members = ["io","usage-rates"]
