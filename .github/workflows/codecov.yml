@@ -16,8 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Test
-      uses: extractions/setup-just@v3
+    - uses: extractions/setup-just@v3
+    - name: Run tests
       run: just test
     - name: Codecov
       uses: codecov/codecov-action@v5
