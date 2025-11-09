@@ -1,10 +1,12 @@
-use csv::{Error as CSVError};
+use csv::{Error as CsvError};
+use sqlx::{Error as SqlxError};
 use umya_spreadsheet::XlsxError;
 
 #[derive(Debug)]
 pub enum ReadError {
-    CSVError(CSVError),
+    CsvError(CsvError),
     XlsxError(XlsxError),
+    SqlxError(SqlxError),
     NoRow,
     NoCell,
 }
@@ -15,8 +17,14 @@ impl From<XlsxError> for ReadError {
     }
 }
 
-impl From<CSVError> for ReadError {
-    fn from(value: CSVError) -> Self {
-        ReadError::CSVError(value)
+impl From<CsvError> for ReadError {
+    fn from(value: CsvError) -> Self {
+        ReadError::CsvError(value)
+    }
+}
+
+impl From<SqlxError> for ReadError {
+    fn from(value: SqlxError) -> Self {
+        ReadError::SqlxError(value)
     }
 }
