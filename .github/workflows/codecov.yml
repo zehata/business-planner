@@ -15,10 +15,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: extractions/setup-just@v3
+    - uses: cargo-bins/cargo-binstall@main
     - name: Install nextest
-      run: cargo install cargo-nextest --locked
+      run: cargo binstall cargo-nextest --locked
     - name: Install llvm-cov
-      run: cargo install cargo-llvm-cov --locked
+      run: cargo binstall cargo-llvm-cov --locked
     - name: Run tests
       run: just test
     - name: Codecov
