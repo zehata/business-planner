@@ -19,8 +19,6 @@ jobs:
 
     - name: Install postgres
       run: sudo apt install -y postgresql postgresql-client
-    - name: Update path
-      run: find /usr/lib/postgresql/ -type d -name "bin" >> $GITHUB_PATH
     
     - name: Install testing toolchains
       run: cargo binstall cargo-nextest cargo-llvm-cov --no-confirm --locked
