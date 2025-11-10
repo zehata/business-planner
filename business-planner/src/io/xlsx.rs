@@ -4,7 +4,7 @@ pub fn read() -> Result<String, ReadError> {
     use std::path::Path;
     use umya_spreadsheet::{self as spreadsheet};
 
-    let path = Path::new("./samples/excel.xlsx");
+    let path = Path::new("./src/io/samples/excel.xlsx");
     let book = spreadsheet::reader::xlsx::read(path)?;
     let sheet = book.get_sheet_by_name("Sheet1").unwrap();
     let Some(cell) = sheet.get_cell("B1") else {
