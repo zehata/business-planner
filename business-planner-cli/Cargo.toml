@@ -1,0 +1,9 @@
+[package]
+name = "business-planner-cli"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+business-planner = { path = "../business-planner" }
+clap = { version = "4.5.51", features = ["derive"] }
+inquire = "0.9.1"

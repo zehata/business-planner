@@ -1,8 +1,8 @@
-use std::path::Path;
-use crate::errors::ReadError;
+use std::{path::Path};
+use crate::errors::io::ReadError;
 
 pub fn read() -> Result<String, ReadError> {
-    let path = Path::new("./samples/csv.csv");
+    let path = Path::new("./src/io/samples/csv.csv");
     let mut sheet = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(path)?;
@@ -14,6 +14,7 @@ pub fn read() -> Result<String, ReadError> {
     let Some(value) = row.get(1) else {
         return Err(ReadError::NoCell)
     };
+    
     Ok(value.to_string())
 }
 
