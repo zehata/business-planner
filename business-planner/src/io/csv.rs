@@ -1,5 +1,5 @@
 use std::path::Path;
-use crate::errors::ReadError;
+use crate::errors::io::ReadError;
 
 pub fn read() -> Result<String, ReadError> {
     let path = Path::new("./samples/csv.csv");
@@ -14,6 +14,7 @@ pub fn read() -> Result<String, ReadError> {
     let Some(value) = row.get(1) else {
         return Err(ReadError::NoCell)
     };
+    
     Ok(value.to_string())
 }
 

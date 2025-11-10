@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["io","usage-rates"]
+members = ["business-planner", "business-planner-cli"]

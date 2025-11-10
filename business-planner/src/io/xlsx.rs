@@ -1,8 +1,9 @@
-use std::path::Path;
-use umya_spreadsheet::{self as spreadsheet};
-use crate::errors::ReadError;
+use crate::errors::io::ReadError;
 
 pub fn read() -> Result<String, ReadError> {
+    use std::path::Path;
+    use umya_spreadsheet::{self as spreadsheet};
+
     let path = Path::new("./samples/excel.xlsx");
     let book = spreadsheet::reader::xlsx::read(path)?;
     let sheet = book.get_sheet_by_name("Sheet1").unwrap();
