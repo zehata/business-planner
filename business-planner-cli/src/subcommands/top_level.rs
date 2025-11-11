@@ -1,5 +1,5 @@
 use std::{fmt, path::PathBuf};
-use business_planner::session::Session;
+use business_planner::structs::Session;
 use clap::Subcommand;
 use strum_macros::EnumIter;
 use strum::IntoEnumIterator;

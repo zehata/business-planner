@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use business_planner::{errors::session::LoadSessionError, session::Session};
+use business_planner::{errors::session::LoadSessionError, structs::Session};
 use clap::{Parser, Subcommand};
 use strum::IntoEnumIterator;
 

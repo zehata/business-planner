@@ -1,4 +1,4 @@
-use business_planner::session::Session;
+use business_planner::structs::Session;
 use inquire::Select;
 use crate::{errors::Error};
 

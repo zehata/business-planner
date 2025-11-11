@@ -3,36 +3,7 @@ use std::str::FromStr;
 use bigdecimal::{BigDecimal, FromPrimitive, ParseBigDecimalError};
 use jiff::Timestamp;
 
-type Amount = BigDecimal;
-
-#[derive(Clone)]
-pub struct StockLevel {
-    pub amount: Amount,
-    pub timestamp: Timestamp,
-}
-
-pub struct TargetWindow {
-    pub target: Amount,
-    pub window: Amount,
-}
-
-pub struct Thresholds {
-    pub minimum: Amount,
-    pub maximum: Amount,
-}
-
-pub enum StockLevelTarget {
-    TargetWindow{target: Amount, upward_window: Amount, downward_window: Amount},
-    Thresholds{minimum: Amount, maximum: Amount},
-}
-
-pub struct UsageData {
-    stock_levels: Vec<StockLevel>
-}
-
-pub trait Predictor {
-    fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, jiff::Error>;
-}
+use crate::structs::{Amount, Predictor, StockLevel, StockLevelTarget, UsageData};
 
 struct LinearPredictor {
     m: BigDecimal,

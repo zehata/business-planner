@@ -1,5 +1,5 @@
 use std::io::{Write, stdin, stdout};
-use business_planner::session::Session;
+use business_planner::structs::Session;
 use crate::{errors::Error, subcommands::top_level::Command};
 use clap::Parser;
 
