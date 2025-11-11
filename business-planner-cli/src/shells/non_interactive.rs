@@ -1,0 +1,30 @@
+use std::io::{Write, stdin, stdout};
+use business_planner::session::Session;
+use crate::{errors::Error, subcommands::top_level::Command};
+use clap::Parser;
+
+#[derive(Debug, Parser)]
+#[command(name = "")]
+#[command(about, no_binary_name(true))]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+pub fn prompt_user<T>(
+    parser: T,
+    session: &Session,
+    user_requested_exit: &mut bool
+) -> Result<(), Error>
+where
+T: FnOnce(&Command, &Session, &mut bool) -> Result<(), Error>
+{
+    print!("> ");
+    stdout().flush().expect("Failed to print to stdout");
+    
+    let mut buffer = String::new();
+    stdin().read_line(&mut buffer)?;
+    let cli_result = Cli::try_parse_from(buffer.split_whitespace())?;
+    
+    parser(&cli_result.command, session, user_requested_exit)
+}
