@@ -7,3 +7,5 @@ edition = "2024"
 business-planner = { path = "../business-planner" }
 clap = { version = "4.5.51", features = ["derive"] }
 inquire = "0.9.1"
+strum = "0.27"
+strum_macros = "0.27"

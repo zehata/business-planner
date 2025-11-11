@@ -1,7 +1,11 @@
 use std::path::PathBuf;
+use business_planner::{errors::session::LoadSessionError, session::Session};
 use clap::{Parser, Subcommand};
-pub mod interactive;
-pub mod shell;
+use strum::IntoEnumIterator;
+
+pub mod shells;
+pub mod subcommands;
+pub mod errors;
 
 /// Interactive CLI for business-planner
 #[derive(Debug, Parser)] // requires `derive` feature
@@ -38,17 +42,44 @@ enum Commands {
 fn main() {
     let args = Cli::parse();
 
-    match args.command {
+    let session = match args.command {
         Commands::Create => {
             println!("Creating a new planner file");
+            business_planner::session::create()
         }
         Commands::Load { path } => {
             println!("Loading {}", path.display());
+            match business_planner::session::load(path) {
+                Ok(session) => session,
+                Err(LoadSessionError::ReadFileError(error)) => panic!("{:#?}", error),
+                Err(LoadSessionError::XmlDeserializationError(error)) => panic!("{:#?}", error),
+            }
         }
-    }
+    };
 
-    match args.interactive {
-        true => interactive::interactive(),
-        _ => shell::shell(),
+    init_shell(&session, &args.interactive);
+}
+
+fn init_shell(session: &Session, is_interactive: &bool) {
+    let mut user_requested_exit = false;
+
+    while !user_requested_exit {
+        let result = match is_interactive {
+            true => shells::interactive::prompt_user(
+                subcommands::top_level::Command::iter(),
+                subcommands::top_level::parse_interactive_subcommand,
+                session,
+                &mut user_requested_exit,
+            ),
+            _ => shells::non_interactive::prompt_user(
+                subcommands::top_level::parse_non_interactive_subcommand,
+                session,
+                &mut user_requested_exit,
+            ),
+        };
+
+        if let Err(error) = result {
+            println!("{:#?}", error);
+        }
     }
 }
