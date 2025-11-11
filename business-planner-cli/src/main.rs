@@ -64,9 +64,13 @@ fn init_shell(session: &Session, is_interactive: &bool) {
     let mut user_requested_exit = false;
 
     while !user_requested_exit {
+        let commands = subcommands::top_level::Command::iter();
+        let commands: Vec<_> = commands.clone().map(|command| { format!("{}", command) }).collect();
+        let commands = commands.iter().map(|command| { command.as_str() }).collect();
+
         let result = match is_interactive {
             true => shells::interactive::prompt_user(
-                subcommands::top_level::Command::iter(),
+                commands,
                 subcommands::top_level::parse_interactive_subcommand,
                 session,
                 &mut user_requested_exit,

@@ -15,7 +15,7 @@ impl fmt::Debug for Error {
         write!(f, "{}", match self {
             Error::BusinessPlannerError(error) => format!("{:#?}", error),
             Error::IoError(error) => format!("IO Error: {:#?}", error),
-            Error::ParseError(error) => format!("Failed to parse command: {:#?}", error),
+            Error::ParseError(error) => format!("{:#?}", error),
         })
     }
 }
@@ -29,7 +29,7 @@ pub enum ParseError {
 impl fmt::Debug for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match self {
-            ParseError::ClapError(error) => format!("{:#?}", error),
+            ParseError::ClapError(error) => format!("{}", error),
             ParseError::InquireError(error) => format!("{:#?}", error),
             ParseError::InvalidCommandError(command) => format!("{} was not found in the list of valid commands", command),
         })

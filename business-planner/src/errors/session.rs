@@ -3,6 +3,7 @@ use serde_xml_rs::Error as SerdeXmlError;
 
 pub enum SaveSessionError {
     UndefinedSavePath,
+    FileExists,
     WriteFileError(IoError),
     XmlSerializationError(SerdeXmlError),
 }
@@ -10,7 +11,8 @@ pub enum SaveSessionError {
 impl fmt::Debug for SaveSessionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let error = match self {
-            Self::UndefinedSavePath => { "File was not previously saved at any location. Use `save <PATH>` to define the location to save to.".to_string() },
+            Self::UndefinedSavePath => "File was not previously saved at any location. Use `save <PATH>` to define the location to save to.".to_string(),
+            Self::FileExists => "File exists".to_string(),
             Self::WriteFileError(error) => { format!("Failed to write the session to file due to {:#?}", error) },
             Self::XmlSerializationError(error) => { format!("Failed to serialize the session to write to file due to {:#?}", error) },
         };

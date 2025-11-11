@@ -21,10 +21,16 @@ T: FnOnce(&Command, &Session, &mut bool) -> Result<(), Error>
 {
     print!("> ");
     stdout().flush().expect("Failed to print to stdout");
+
+    let buffer = prompt_user_text()?;
     
+    let cli_result = Cli::try_parse_from(buffer.split_whitespace())?;
+    parser(&cli_result.command, session, user_requested_exit)
+}
+
+pub fn prompt_user_text () -> Result<String, Error> {
     let mut buffer = String::new();
     stdin().read_line(&mut buffer)?;
-    let cli_result = Cli::try_parse_from(buffer.split_whitespace())?;
-    
-    parser(&cli_result.command, session, user_requested_exit)
+
+    Ok(buffer)
 }

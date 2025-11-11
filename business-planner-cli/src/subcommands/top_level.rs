@@ -2,8 +2,9 @@ use std::{fmt, path::PathBuf};
 use business_planner::session::Session;
 use clap::Subcommand;
 use strum_macros::EnumIter;
+use strum::IntoEnumIterator;
 
-use crate::{errors::{Error, ParseError}, subcommands::save::save};
+use crate::{errors::{Error, ParseError}, shells::{self}, subcommands::{self}};
 
 #[derive(Debug, Subcommand, EnumIter)]
 pub enum Command {
@@ -33,8 +34,8 @@ pub fn parse_non_interactive_subcommand (command: &Command, session: &Session, u
     match command {
         Command::Save { path } => {
             match path {
-                Some(path) => session.save_to_location(path),
-                None => session.save_to_last_save_location(),
+                Some(path) => session.save_to_location(path, false),
+                None => session.save_to_last_save_location(true),
             }?;
         },
         Command::Exit => {
@@ -45,10 +46,16 @@ pub fn parse_non_interactive_subcommand (command: &Command, session: &Session, u
 }
 
 pub fn parse_interactive_subcommand(command: &str, session: &Session, user_requested_exit: &mut bool) -> Result<(), Error> {
+    let commands: Vec<_> = subcommands::save::Command::iter().clone().map(|command| { format!("{}", command) }).collect();
+    let commands = commands.iter().map(|command| { command.as_str() }).collect();
+
     match command {
-        "Save" => {
-            save(session)
-        },
+        "Save" => shells::interactive::prompt_user(
+            commands,
+            subcommands::save::parse_interactive_command,
+            session,
+            user_requested_exit
+        ),
         "Exit" => {
             *user_requested_exit = true;
             Ok(())
