@@ -1,3 +1,5 @@
+pub mod error;
+
 #[cfg(feature = "excel")]
 pub mod xlsx;
 

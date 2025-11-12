@@ -1,6 +1,6 @@
 use sqlx::Postgres;
 
-use crate::errors::io::ReadError;
+use crate::io::error::ReadError;
 
 pub async fn read(pool: sqlx::Pool<Postgres>) -> Result<String, ReadError> {
     let row: (i64,) = sqlx::query_as("SELECT $1")

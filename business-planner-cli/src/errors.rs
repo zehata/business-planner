@@ -1,5 +1,5 @@
 
-use business_planner::errors::session::SaveSessionError;
+use business_planner::session::error::SaveSessionError;
 use inquire::InquireError;
 use std::{fmt, io::Error as IoError};
 use clap::error::Error as ClapError;

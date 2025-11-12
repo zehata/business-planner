@@ -1,6 +1,8 @@
 use std::{fs, path::{self, PathBuf}};
 
-use crate::{errors::session::LoadSessionError, structs::Session};
+use crate::{session::error::LoadSessionError, structs::Session};
+
+pub mod error;
 
 pub fn create() -> Session {
     Session::default()

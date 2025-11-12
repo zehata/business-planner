@@ -1,9 +1,9 @@
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal};
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::{Path, PathBuf}};
 
-use crate::{errors::session::{SaveSessionError}};
+use crate::{session::error::SaveSessionError, usage_rates::PredictionError};
 
 #[derive(Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct Material {
@@ -53,28 +53,21 @@ impl Session {
     }
 }
 
+pub struct Store {
+    pub usage_data: UsageData,
+}
+
 #[derive(Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct Stock {
     material: Material,
     amount: Amount,
 }
-
 pub type Amount = BigDecimal;
 
 #[derive(Clone)]
 pub struct StockLevel {
     pub amount: Amount,
     pub timestamp: Timestamp,
-}
-
-pub struct TargetWindow {
-    pub target: Amount,
-    pub window: Amount,
-}
-
-pub struct Thresholds {
-    pub minimum: Amount,
-    pub maximum: Amount,
 }
 
 pub enum StockLevelTarget {
@@ -87,5 +80,5 @@ pub struct UsageData {
 }
 
 pub trait Predictor {
-    fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, jiff::Error>;
+    fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, PredictionError>;
 }

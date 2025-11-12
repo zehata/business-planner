@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use bigdecimal::{BigDecimal, FromPrimitive, ParseBigDecimalError};
-use jiff::Timestamp;
+use jiff::{Timestamp, Error as JiffError};
 
 use crate::structs::{Amount, Predictor, StockLevel, StockLevelTarget, UsageData};
 
@@ -11,9 +11,9 @@ struct LinearPredictor {
 }
 
 impl Predictor for LinearPredictor {
-    fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, jiff::Error> {
+    fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, PredictionError> {
         let time_string = ((minimum_threshold - &self.c)/&self.m).to_string();
-        Timestamp::from_str(&time_string)
+        Ok(Timestamp::from_str(&time_string)?)
     }
 }
 
@@ -21,7 +21,7 @@ pub trait Model {
     fn estimate_movement(&self, usage_data: &UsageData) -> Result<Box<dyn Predictor>, PredictorEstimationError>;
 }
 
-struct LinearRegression {
+pub struct LinearRegression {
 
 }
 
@@ -88,8 +88,6 @@ impl Model for LinearRegression {
     }
 }
 
-const DEFAULT_PREDICTION_MODEL: LinearRegression = LinearRegression{};
-
 pub enum PredictorEstimationError {
     NoUsageData(String),
     ParseBigDecimalError(ParseBigDecimalError),
@@ -102,9 +100,19 @@ impl From<ParseBigDecimalError> for PredictorEstimationError {
     }
 }
 
+pub enum PredictionError {
+    JiffError(JiffError)
+}
+
+impl From<JiffError> for PredictionError {
+    fn from(value: JiffError) -> Self {
+        PredictionError::JiffError(value)
+    }
+}
+
 pub enum StockTakePredictionError {
     PredictorEstimationError(PredictorEstimationError),
-    TimestampConversionError(jiff::Error),
+    PredictionError(PredictionError),
 }
 
 impl From<PredictorEstimationError> for StockTakePredictionError {
@@ -113,18 +121,14 @@ impl From<PredictorEstimationError> for StockTakePredictionError {
     }
 }
 
-impl From<jiff::Error> for StockTakePredictionError {
-    fn from(value: jiff::Error) -> Self {
-        StockTakePredictionError::TimestampConversionError(value)
+impl From<PredictionError> for StockTakePredictionError {
+    fn from(value: PredictionError) -> Self {
+        StockTakePredictionError::PredictionError(value)
     }
 }
 
-pub fn predict_next_stock_take(usage_data: &UsageData, target: &StockLevelTarget, prediction_model: &Option<Box<dyn Model>>) -> Result<Timestamp, StockTakePredictionError> {
-    let model = match prediction_model {
-        Some(model) => model,
-        _ => &(Box::new(DEFAULT_PREDICTION_MODEL) as Box<dyn Model>)
-    };
-    let predictor = model.estimate_movement(usage_data)?;
+pub fn predict_next_stock_take(usage_data: &UsageData, target: &StockLevelTarget, prediction_model: Box<dyn Model>) -> Result<Timestamp, StockTakePredictionError> {
+    let predictor = prediction_model.estimate_movement(usage_data)?;
     let minimum_threshold = match target {
         StockLevelTarget::TargetWindow{target, downward_window, upward_window: _} => {
             target - downward_window

@@ -1,4 +1,4 @@
-use crate::errors::io::ReadError;
+use crate::io::error::ReadError;
 
 pub fn read() -> Result<String, ReadError> {
     use std::path::Path;

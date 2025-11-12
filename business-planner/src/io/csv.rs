@@ -1,5 +1,5 @@
 use std::{path::Path};
-use crate::errors::io::ReadError;
+use crate::io::error::ReadError;
 
 pub fn read() -> Result<String, ReadError> {
     let path = Path::new("./src/io/samples/csv.csv");
