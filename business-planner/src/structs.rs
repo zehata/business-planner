@@ -1,7 +1,7 @@
 use bigdecimal::{BigDecimal};
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, path::{Path, PathBuf}};
+use std::{collections::HashMap, fmt::{self, Display, Formatter}, fs, path::{Path, PathBuf}};
 
 use crate::{session::error::SaveSessionError, usage_rates::PredictionError};
 
@@ -81,4 +81,14 @@ pub struct UsageData {
 
 pub trait Predictor {
     fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, PredictionError>;
+
+    fn display(&self) -> Box<dyn Display>;
 }
+
+impl fmt::Display for dyn Predictor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{}", self.display())
+    }
+}
+
+pub type Report = String;

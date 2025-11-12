@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use bigdecimal::{BigDecimal, FromPrimitive, ParseBigDecimalError};
 use jiff::{Timestamp, Error as JiffError};
@@ -14,6 +14,10 @@ impl Predictor for LinearPredictor {
     fn time_at_minimum_threshold(&self, minimum_threshold: &Amount) -> Result<Timestamp, PredictionError> {
         let time_string = ((minimum_threshold - &self.c)/&self.m).to_string();
         Ok(Timestamp::from_str(&time_string)?)
+    }
+
+    fn display(&self) -> Box<dyn fmt::Display> {
+        Box::new(format!("y = {}x + {}", self.m, self.c))
     }
 }
 

@@ -1,6 +1,6 @@
-use crate::{reports::error::ReportGenerationError, structs::{Amount, StockLevelTarget, Store}, usage_rates::{LinearRegression, Model}};
+use crate::{reports::error::ReportGenerationError, structs::{Amount, Report, StockLevelTarget, Store}, usage_rates::{LinearRegression, Model}};
 
-pub fn generate(store: &Store) -> Result<(), ReportGenerationError> {
+pub fn generate(store: &Store) -> Result<Report, ReportGenerationError> {
     let target = &StockLevelTarget::Thresholds{
         maximum: Amount::from(100),
         minimum: Amount::from(10),
@@ -15,5 +15,6 @@ pub fn generate(store: &Store) -> Result<(), ReportGenerationError> {
         StockLevelTarget::Thresholds{minimum, maximum: _} => minimum.clone(),
     };
     let time = predictor.time_at_minimum_threshold(&minimum_threshold)?;
-    Ok(())
+    
+    Ok(format!("Next stock take prediction: {}\nEstimated predictor: {}\nEstimator: Ordinary linear regression", time, predictor))
 }
