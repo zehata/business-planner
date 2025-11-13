@@ -1,4 +1,6 @@
-use crate::{reports::error::ReportGenerationError, structs::{Amount, Report, StockLevelTarget, Store}, usage_rates::{LinearRegression, Model}};
+use business_planner::{reports::error::ReportGenerationError, structs::{Amount, Report, StockLevelTarget, Store}, usage_rates::Model};
+
+use crate::linear::estimator::LinearRegression;
 
 pub fn generate(store: &Store) -> Result<Report, ReportGenerationError> {
     let target = &StockLevelTarget::Thresholds{

@@ -1,10 +1,10 @@
 use std::{fmt, path::{Path, PathBuf}};
-use business_planner::structs::Session;
 use inquire::Text;
 use clap::Subcommand;
 use strum_macros::EnumIter;
+use strum::IntoEnumIterator;
 
-use crate::errors::{Error, ParseError};
+use crate::{cli_api::error::{Error, ParseError}, structs::Session};
 
 #[derive(Debug, Subcommand, EnumIter)]
 pub enum Command {
@@ -28,6 +28,10 @@ impl fmt::Display for Command {
         };
         write!(f, "{}", name)
     }
+}
+
+pub fn get_commands () -> Vec<String> {
+    Command::iter().clone().map(|command| { format!("{}", command) }).collect()
 }
 
 pub fn parse_interactive_command(command: &str, session: &Session, _user_requested_exit: &mut bool) -> Result<(), Error> {

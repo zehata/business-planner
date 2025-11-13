@@ -209,12 +209,16 @@ name = "business-planner"
 version = "0.0.0"
 dependencies = [
  "bigdecimal",
+ "clap",
  "csv",
+ "inquire",
  "jiff",
  "pgtemp",
  "serde",
  "serde-xml-rs",
  "sqlx",
+ "strum",
+ "strum_macros",
  "tokio",
  "umya-spreadsheet",
 ]
@@ -223,11 +227,14 @@ dependencies = [
 name = "business-planner-cli"
 version = "0.0.0"
 dependencies = [
+ "bigdecimal",
  "business-planner",
  "clap",
  "inquire",
+ "jiff",
  "strum",
  "strum_macros",
+ "tokio",
 ]
 
 [[package]]

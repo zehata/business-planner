@@ -1,6 +1,5 @@
 use std::io::{Write, stdin, stdout};
-use business_planner::structs::Session;
-use crate::{errors::Error, subcommands::top_level::Command};
+use crate::{cli_api::{error::Error, subcommands::top_level::Command}, structs::Session};
 use clap::Parser;
 
 #[derive(Debug, Parser)]

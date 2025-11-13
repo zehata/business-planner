@@ -1,8 +1,9 @@
 
-use business_planner::session::error::SaveSessionError;
 use inquire::InquireError;
 use std::{fmt, io::Error as IoError};
 use clap::error::Error as ClapError;
+
+use crate::session::error::SaveSessionError;
 
 pub enum Error {
     BusinessPlannerError(SaveSessionError),

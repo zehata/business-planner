@@ -1,6 +1,5 @@
-use business_planner::structs::Session;
 use inquire::Select;
-use crate::{errors::Error};
+use crate::{cli_api::error::Error, structs::Session};
 
 pub fn prompt_user<T>(
     commands: Vec<&str>,
