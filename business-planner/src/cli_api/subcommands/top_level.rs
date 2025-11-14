@@ -1,9 +1,8 @@
 use std::{fmt, path::PathBuf};
 use clap::Subcommand;
 use strum_macros::EnumIter;
-use strum::IntoEnumIterator;
 
-use crate::{cli_api::{error::{Error, ParseError}, shells::{self}, subcommands::{self, generate, save}}, structs::Session};
+use crate::{cli_api::{error::{Error, ParseError}, shells::{self}, subcommands::{self, save}}, structs::Session};
 
 #[derive(Debug, Subcommand, EnumIter)]
 pub enum Command {
