@@ -52,12 +52,12 @@ pub fn parse_interactive_subcommand(command: &str, session: &Session, user_reque
             session,
             user_requested_exit,
         ),
-        "Generate" => shells::interactive::prompt_user(
-            generate::get_commands().iter().map(|command| { command.as_str() }).collect(),
-            generate::parse_interactive_subcommand,
-            session,
-            user_requested_exit,
-        ),
+        // "Generate" => shells::interactive::prompt_user(
+        //     generate::get_commands().iter().map(|command| { command.as_str() }).collect(),
+        //     generate::parse_interactive_subcommand,
+        //     session,
+        //     user_requested_exit,
+        // ),
         "Exit" => {
             *user_requested_exit = true;
             Ok(())
