@@ -211,6 +211,7 @@ dependencies = [
  "bigdecimal",
  "clap",
  "csv",
+ "gaol",
  "inquire",
  "jiff",
  "pgtemp",
@@ -782,6 +783,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54614a3312934d066701a80f20f15fa3b56d67ac7722b39eea5b4c9dd1d66c94"
 dependencies = [
  "thread_local",
+]
+
+[[package]]
+name = "gaol"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "061957ca7a966a39a79ebca393a9a6c7babda10bf9dd6f11d00041558d929c22"
+dependencies = [
+ "libc",
+ "log",
 ]
 
 [[package]]

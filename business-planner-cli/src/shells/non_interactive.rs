@@ -1,6 +1,7 @@
 use std::io::{Write, stdin, stdout};
-use crate::{cli_api::{error::Error, subcommands::top_level::Command}, structs::Session};
-use clap::Parser;
+use business_planner::api::session::Session;
+use clap::{Parser};
+use crate::{error, subcommands::top_level::Command};
 
 #[derive(Debug, Parser)]
 #[command(name = "")]
@@ -14,9 +15,9 @@ pub fn prompt_user<T>(
     parser: T,
     session: &Session,
     user_requested_exit: &mut bool
-) -> Result<(), Error>
+) -> Result<(), error::Error>
 where
-T: FnOnce(&Command, &Session, &mut bool) -> Result<(), Error>
+T: FnOnce(&Command, &Session, &mut bool) -> Result<(), error::Error>
 {
     print!("> ");
     stdout().flush().expect("Failed to print to stdout");
@@ -27,7 +28,7 @@ T: FnOnce(&Command, &Session, &mut bool) -> Result<(), Error>
     parser(&cli_result.command, session, user_requested_exit)
 }
 
-pub fn prompt_user_text () -> Result<String, Error> {
+pub fn prompt_user_text () -> Result<String, error::Error> {
     let mut buffer = String::new();
     stdin().read_line(&mut buffer)?;
 

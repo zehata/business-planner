@@ -1,8 +1,9 @@
 use std::{fmt, path::PathBuf};
+use business_planner::api::{session::{Session, save_to_last_save_location, save_to_location}};
 use clap::Subcommand;
 use strum_macros::EnumIter;
 
-use crate::{cli_api::{error::{Error, ParseError}, shells::{self}, subcommands::{self, save}}, structs::Session};
+use crate::{shells, subcommands, error};
 
 #[derive(Debug, Subcommand, EnumIter)]
 pub enum Command {
@@ -28,12 +29,12 @@ impl fmt::Display for Command {
     }
 }
 
-pub fn parse_non_interactive_subcommand (command: &Command, session: &Session, user_requested_exit: &mut bool) -> Result<(), Error> {
+pub fn parse_non_interactive_subcommand (command: &Command, session: &Session, user_requested_exit: &mut bool) -> Result<(), error::Error> {
     match command {
         Command::Save { path } => {
             match path {
-                Some(path) => session.save_to_location(path, false),
-                None => session.save_to_last_save_location(true),
+                Some(path) => save_to_location(session, path, false),
+                None => save_to_last_save_location(session, true),
             }?;
         },
         Command::Exit => {
@@ -43,24 +44,24 @@ pub fn parse_non_interactive_subcommand (command: &Command, session: &Session, u
     Ok(())
 }
 
-pub fn parse_interactive_subcommand(command: &str, session: &Session, user_requested_exit: &mut bool) -> Result<(), Error> {
+pub fn parse_interactive_subcommand(command: &str, session: &Session, user_requested_exit: &mut bool) -> Result<(), error::Error> {
     match command {
         "Save" => shells::interactive::prompt_user(
-            save::get_commands().iter().map(|command| { command.as_str() }).collect(),
+            || { Ok(subcommands::save::get_commands()) },
             subcommands::save::parse_interactive_command,
             session,
             user_requested_exit,
         ),
-        // "Generate" => shells::interactive::prompt_user(
-        //     generate::get_commands().iter().map(|command| { command.as_str() }).collect(),
-        //     generate::parse_interactive_subcommand,
-        //     session,
-        //     user_requested_exit,
-        // ),
+        "Generate" => shells::interactive::prompt_user(
+            || { Ok(subcommands::generate::get_commands()?) },
+            subcommands::generate::parse_interactive_command,
+            session,
+            user_requested_exit,
+        ),
         "Exit" => {
             *user_requested_exit = true;
             Ok(())
         },
-        _ => Err(Error::ParseError(ParseError::InvalidCommandError(command.to_string()))),
+        _ => Err(error::Error::ParseError(error::ParseError::InvalidCommandError(command.to_string()))),
     }
 }

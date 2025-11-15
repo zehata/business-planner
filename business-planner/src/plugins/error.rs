@@ -2,9 +2,11 @@ use std::io::Error as IoError;
 use pyo3::PyErr;
 use std::ffi::NulError;
 
+#[derive(Debug)]
 pub enum PluginDiscoveryError {
     IoError(IoError),
     ReadDirectoryError,
+    PluginNotFound,
 }
 
 impl From<IoError> for PluginDiscoveryError {
@@ -13,22 +15,24 @@ impl From<IoError> for PluginDiscoveryError {
     }
 }
 
+#[derive(Debug)]
 pub enum PluginError {
-    ReadPluginError(IoError),
+    IoError(IoError),
     ConversionToCStringErr(NulError),
-    ExternalPluginError(PyErr),
+    PluginEvaluationError(PyErr),
     PluginDiscoveryError(PluginDiscoveryError),
+    PluginMissingError,
 }
 
 impl From<PyErr> for PluginError {
     fn from(value: PyErr) -> Self {
-        PluginError::ExternalPluginError(value)
+        PluginError::PluginEvaluationError(value)
     }
 }
 
 impl From<IoError> for PluginError {
     fn from(value: IoError) -> Self {
-        PluginError::ReadPluginError(value)
+        PluginError::IoError(value)
     }
 }
 
