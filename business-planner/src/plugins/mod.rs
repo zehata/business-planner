@@ -1,12 +1,23 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::{self};
-use std::path::{PathBuf};
+use std::path::{PathBuf, absolute};
+use std::process::{Command, Output};
 
-pub mod python;
+use crate::api::plugins::PluginDiscoveryError;
+use crate::plugins::error::PluginError;
+
 pub mod error;
 
+#[derive(Debug)]
+enum PluginType {
+    Python,
+    Binary,
+}
+
+#[derive(Debug)]
 pub struct Plugin {
-    pub generate_report_script: PathBuf,
+    path: PathBuf,
+    plugin_type: PluginType,
 }
 
 pub enum DirectoryEntriesFilter {
@@ -46,43 +57,73 @@ fn list_directory_contents (path: &PathBuf, filter: Option<DirectoryEntriesFilte
     }).collect::<Result<Vec<PathBuf>, _>>()?)
 }
 
+static REQUIRED_FILES: [&str; 1] = ["main"];
+
 pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryError> {
     let current_directory = PathBuf::from("./plugins/");
     let directory_contents = list_directory_contents(&current_directory, Some(DirectoryEntriesFilter::Directory))?;
 
     let mut plugins = HashMap::new();
     
-    directory_contents.into_iter().for_each(|directory| {
+    directory_contents.into_iter().try_for_each(|directory| {
         let Ok(files) = list_directory_contents(&directory, Some(DirectoryEntriesFilter::File)) else {
-            return
+            return Err(PluginDiscoveryError::ReadDirectoryError)
         };
 
         let file_names = files.iter().filter_map(|file| {
-            let file_name = file.file_name()?;
+            let file_name = file.file_prefix()?;
             
             file_name.to_str()
         });
 
         let file_names = HashSet::from_iter(file_names);
+        let required_file_names = HashSet::from(REQUIRED_FILES);
 
-        let required_file_names = HashSet::from(["estimate_predictor.py", "use_predictor.py", "generate_report.py"]);
-
-        if file_names.intersection(&required_file_names).count() != 3 {
-            return
+        if file_names.intersection(&required_file_names).count() != REQUIRED_FILES.len() {
+            return Ok(())
         }
 
-        let Some(plugin_directory_name) = directory.to_str() else {
-            return
+        let Some(plugin_directory_name) = directory.file_name() else {
+            return Err(PluginDiscoveryError::ReadDirectoryError)
         };
 
-        plugins.insert(plugin_directory_name.to_string(), Plugin{
-            generate_report_script: {
-                let mut script_path = directory.clone();
-                script_path.push("generate_report.py");
+        let Ok(plugin_directory_name) = plugin_directory_name.to_os_string().into_string() else {
+            return Err(PluginDiscoveryError::ReadDirectoryError)
+        };
+
+        plugins.insert(plugin_directory_name, Plugin{
+            path: {
+                let mut script_path = directory;
+                script_path.push("main.py");
                 script_path
             },
+            plugin_type: PluginType::Python,
         });
-    });
+
+        Ok(())
+    })?;
 
     Ok(plugins)
 }
+
+pub fn run_script (plugin: &Plugin) -> Result<Output, PluginError> {
+    let absolute_path = absolute(plugin.path.clone())?;
+    let absolute_path = absolute_path.as_os_str();
+    Ok(match plugin.plugin_type {
+        PluginType::Python => {
+            Command::new("python3").args([absolute_path]).output()
+        },
+        PluginType::Binary => unimplemented!(),
+    }?)
+}
+
+// #[cfg(test)]
+// mod test {
+//     use super::*;
+
+//     #[test]
+//     fn test_func() {
+//         let result = run_script_unsandboxed(&Plugin { path: PathBuf::from("./plugins/linear/main.py"), plugin_type: PluginType::Python });
+//         println!("{:#?}", result);
+//     }
+// }

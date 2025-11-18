@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fs, path::{self, Path, PathBuf}};
+use std::{fs, path::{self, Path, PathBuf}};
 
-use crate::{session::error::{LoadSessionError, SaveSessionError}, structs::{Material, Stock}};
+use crate::{registry::Registry, session::error::{LoadSessionError, SaveSessionError}};
 use serde::{Deserialize, Serialize};
 
 pub mod error;
@@ -8,16 +8,14 @@ pub mod error;
 #[derive(Serialize, Deserialize, PartialEq)]
 pub struct SessionData {
     schema_version: i32,
-    materials: HashMap<String, Material>,
-    stocks: HashMap<String, Stock>,
+    registry: Registry,
 }
 
 impl Default for SessionData {
     fn default() -> Self {
         SessionData {
             schema_version: 1,
-            materials: HashMap::new(),
-            stocks: HashMap::new(),
+            registry: Registry::default(),
         }
     }
 }

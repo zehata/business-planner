@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use business_planner::api::session::{LoadSessionError, Session, load_session};
+use business_planner::{api::session::{LoadSessionError, Session, load_session}, registry::{AppRegistry, RegistryItem, structs::Material}};
 use strum::IntoEnumIterator;
 use clap::{Parser, Subcommand};
 

@@ -1,5 +1,4 @@
 use std::io::Error as IoError;
-use pyo3::PyErr;
 use std::ffi::NulError;
 
 #[derive(Debug)]
@@ -19,15 +18,8 @@ impl From<IoError> for PluginDiscoveryError {
 pub enum PluginError {
     IoError(IoError),
     ConversionToCStringErr(NulError),
-    PluginEvaluationError(PyErr),
     PluginDiscoveryError(PluginDiscoveryError),
     PluginMissingError,
-}
-
-impl From<PyErr> for PluginError {
-    fn from(value: PyErr) -> Self {
-        PluginError::PluginEvaluationError(value)
-    }
 }
 
 impl From<IoError> for PluginError {

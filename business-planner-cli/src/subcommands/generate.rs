@@ -10,6 +10,6 @@ pub fn get_commands () -> Result<Vec<String>, PluginDiscoveryError> {
 
 pub fn parse_interactive_command(command: &str, _session: &Session, _user_requested_exit: &mut bool) -> Result<(), error::Error> {
     let report = generate_report(command.to_string())?;
-    println!("{report}");
+    println!("{:?}", report);
     Ok(())
 }
