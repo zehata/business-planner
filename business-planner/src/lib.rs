@@ -4,4 +4,5 @@ mod usage_rates;
 mod session;
 mod reports;
 mod plugins;
-pub mod registry;
+mod registry;
+mod error;

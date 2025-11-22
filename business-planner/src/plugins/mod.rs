@@ -3,8 +3,7 @@ use std::fs::{self};
 use std::path::{PathBuf, absolute};
 use std::process::{Command, Output};
 
-use crate::api::plugins::PluginDiscoveryError;
-use crate::plugins::error::PluginError;
+use crate::plugins::error::{PluginError, PluginDiscoveryError};
 
 pub mod error;
 
@@ -113,7 +112,9 @@ pub fn run_script (plugin: &Plugin) -> Result<Output, PluginError> {
         PluginType::Python => {
             Command::new("python3").args([absolute_path]).output()
         },
-        PluginType::Binary => unimplemented!(),
+        PluginType::Binary => {
+            Command::new(absolute_path).output()
+        },
     }?)
 }
 

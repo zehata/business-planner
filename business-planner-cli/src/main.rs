@@ -1,91 +1,114 @@
-use std::path::PathBuf;
+use business_planner::api::session::{Session, create_session};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 
-use business_planner::{api::session::{LoadSessionError, Session, load_session}, registry::{AppRegistry, RegistryItem, structs::Material}};
-use strum::IntoEnumIterator;
-use clap::{Parser, Subcommand};
-
-pub mod shells;
-pub mod subcommands;
 pub mod error;
+pub mod shells;
+pub mod registry;
+pub mod save;
 
-/// Interactive CLI for business-planner
-#[derive(Debug, Parser)] // requires `derive` feature
-#[command(name = "business-planner")]
-#[command(about = "Interactive CLI for business-planner", long_about = None)]
-struct Cli {
-    #[arg(
-        long,
-        require_equals = true,
-        value_name = "BOOL",
-        num_args = 0..=1,
-        default_value_t = false,
-    )]
-    interactive: bool,
-    
-    #[command(subcommand)]
-    command: Commands,
+pub use error::{NonError, Error};
+
+use crate::{registry::{get_registry_subcommand, parse_interactive_registry_subcommand, parse_non_interactive_registry_subcommand}, save::{get_save_interactive_subcommand, get_save_subcommand, parse_interactive_save_subcommand, parse_non_interactive_save_subcommand}, shells::{interactive, non_interactive}};
+
+fn entry_cli() -> Command {
+    Command::new("business_planner_cli")
+        .arg(
+            Arg::new("interactive")
+                .global(true)
+                .required(false)
+                .long("interactive")
+                .action(ArgAction::SetTrue)
+        )
+        .subcommands([
+            Command::new("create"),
+            Command::new("load"),
+        ])
 }
 
-#[derive(Debug, Subcommand)]
-enum Commands {
-    /// Creates a new planner file
-    #[command()]
-    Create,
-    /// Loads an existing planner file
-    #[command(arg_required_else_help = true)]
-    Load {
-        /// Path to planner file
-        #[arg(required = true)]
-        path: PathBuf,
-    },
-}
-
-pub fn init_shell(session: &Session, is_interactive: &bool) {
-    let mut user_requested_exit = false;
-
-    while !user_requested_exit {
-        let result = match is_interactive {
-            true => shells::interactive::prompt_user(
-                || {    
-                    let commands = subcommands::top_level::Command::iter();
-                    let commands = commands.clone().map(|command| { format!("{}", command) }).collect();
-                    
-                    Ok(commands) 
-                },
-                subcommands::top_level::parse_interactive_subcommand,
-                session,
-                &mut user_requested_exit,
-            ),
-            _ => shells::non_interactive::prompt_user(
-                subcommands::top_level::parse_non_interactive_subcommand,
-                session,
-                &mut user_requested_exit,
-            ),
-        };
-
-        if let Err(error) = result {
-            println!("{:#?}", error);
+#[tokio::main]
+async fn main () {
+    let matches = entry_cli().get_matches();
+    let mut session = match matches.subcommand() {
+        Some(("create", _)) => {
+            create_session()
+        },
+        Some(("load", _)) => {
+            unimplemented!()
+        },
+        _ => {
+            unimplemented!()
         }
+    };
+    let interactive = matches.get_one::<bool>("interactive").unwrap_or(&false);
+    let mut user_requested_exit = false;
+    while !user_requested_exit {
+        let result = match interactive {
+            true => interactive::shell(
+                get_main_menu_subcommand().get_subcommands().map(|command| {
+                    command.get_name().to_string()
+                }).collect(),
+                parse_interactive_main_menu_subcommand,
+                &mut session
+            ).await,
+            false => non_interactive::shell(
+                get_main_menu_subcommand(),
+                parse_non_interactive_main_menu_subcommand,
+                &mut session
+            ).await,
+        };
+        
+        match result {
+            Ok(NonError::Exit) => { user_requested_exit = true; },
+            Ok(NonError::Continue) => {},
+            Err(error) => println!("{:?}", error),
+        };
     }
 }
 
-pub fn main () {
-    let args = Cli::parse();
+fn get_main_menu_subcommand() -> Command {
+    Command::new("")
+        .no_binary_name(true)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .subcommands([
+            get_registry_subcommand(),
+            get_save_subcommand(),
+            Command::new("exit"),
+        ])
+}
 
-    let session = match args.command {
-        Commands::Create => {
-            println!("Creating a new planner file");
-            Session::new()
-        }
-        Commands::Load { path } => {
-            println!("Loading {}", path.display());
-            match load_session(path) {
-                Ok(session) => session,
-                Err(LoadSessionError::ReadFileError(error)) => panic!("{:#?}", error),
-                Err(LoadSessionError::XmlDeserializationError(error)) => panic!("{:#?}", error),
-            }
-        }
-    };
+async fn parse_interactive_main_menu_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
+    match command {
+        "registry" => {
+            shells::interactive::shell(
+                get_registry_subcommand().get_subcommands().map(|command| {
+                    command.get_name().to_string()
+                }).collect(),
+                parse_interactive_registry_subcommand,
+                session,
+            ).await
+        },
+        "save" => {
+            shells::interactive::shell(
+                get_save_interactive_subcommand(),
+                parse_interactive_save_subcommand,
+                session,
+            ).await
+        },
+        "exit" => Ok(NonError::Exit),
+        _ => Err(Error::InvalidInput),
+    }
+}
 
-    init_shell(&session, &args.interactive);
+async fn parse_non_interactive_main_menu_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
+    match arg_matches.subcommand() {
+        Some(("registry", arg_matches)) => {
+            parse_non_interactive_registry_subcommand(arg_matches, session).await
+        },
+        Some(("save", arg_matches)) => {
+            parse_non_interactive_save_subcommand(arg_matches, session).await
+        },
+        Some(("exit", _)) => Ok(NonError::Exit),
+        _ => Err(Error::InvalidInput),
+    }
 }

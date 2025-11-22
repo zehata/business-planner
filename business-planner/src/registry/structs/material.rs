@@ -3,15 +3,19 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::registry::{Registry, RegistryItem};
+use crate::{registry::{GetItemRegistry, RegistryItem}, session::Session};
 
 #[derive(Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct Material {
 
 }
 
-impl RegistryItem for Material {
-    fn get_item_registry(app_registry: &mut Registry) -> &mut HashMap<Uuid, Material> {
-        &mut app_registry.materials
+impl GetItemRegistry for Material {
+    fn get_item_registry(session: &mut Session) -> &mut HashMap<Uuid, Material> {
+        &mut session.data.registry.materials
     }
+}
+
+impl RegistryItem for Material {
+
 }

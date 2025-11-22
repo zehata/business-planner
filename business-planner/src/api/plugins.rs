@@ -2,8 +2,10 @@ use std::collections::HashMap;
 
 use crate::plugins;
 
-pub use crate::plugins::{Plugin, error::PluginDiscoveryError};
+use crate::api::error::BusinessPlannerError;
 
-pub fn get_plugins() -> Result<HashMap<String, Plugin>, PluginDiscoveryError> {
-    plugins::get_plugins()
+pub use crate::plugins::{Plugin};
+
+pub fn get_plugins() -> Result<HashMap<String, Plugin>, BusinessPlannerError> {
+    Ok(plugins::get_plugins()?)
 }

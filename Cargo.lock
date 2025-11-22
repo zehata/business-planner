@@ -236,6 +236,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

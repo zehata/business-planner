@@ -1,18 +1,15 @@
 use business_planner::api::session::Session;
 use inquire::Select;
-use crate::error;
+use crate::{Error, NonError};
 
-pub fn prompt_user<T, U>(
-    commands: T,
+pub async fn shell<U>(
+    options: Vec<String>,
     parser: U,
-    session: &Session,
-    user_requested_exit: &mut bool
-) -> Result<(), error::Error>
+    session: &mut Session,
+) -> Result<NonError, Error>
 where
-T: FnOnce() -> Result<Vec<String>, error::Error>,
-U: FnOnce(&str, &Session, &mut bool) -> Result<(), error::Error>
+U: AsyncFnOnce(&str, &mut Session) -> Result<NonError, Error>
 {
-    let ans = Select::new("Select", commands()?).prompt()?;
-
-    parser(&ans, session, user_requested_exit)
+    let selected_option = Select::new("Select", options).prompt()?;
+    parser(&selected_option, session).await
 }

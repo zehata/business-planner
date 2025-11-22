@@ -7,8 +7,8 @@ pub mod error;
 
 #[derive(Serialize, Deserialize, PartialEq)]
 pub struct SessionData {
-    schema_version: i32,
-    registry: Registry,
+    pub schema_version: i32,
+    pub registry: Registry,
 }
 
 impl Default for SessionData {
@@ -23,17 +23,15 @@ impl Default for SessionData {
 #[derive(Default)]
 pub struct Session {
     pub last_save_location: Option<PathBuf>,
-    pub data: SessionData,
+    pub(crate) data: SessionData,
 }
 
-impl Session {
-    pub fn new() -> Session {
-        Session::default()
-    }
+pub fn create_session() -> Session {
+    Session::default()
 }
 
-pub fn load(path: PathBuf) -> Result<Session, LoadSessionError> {
-    let serialized_session_data = fs::read_to_string(&path)?;
+pub fn load_session(path: &PathBuf) -> Result<Session, LoadSessionError> {
+    let serialized_session_data = fs::read_to_string(path)?;
     let session_data = serde_xml_rs::from_str(&serialized_session_data)?;
     let path = path::absolute(path).ok();
     Ok(Session {

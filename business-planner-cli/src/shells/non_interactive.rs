@@ -1,36 +1,25 @@
 use std::io::{Write, stdin, stdout};
+
 use business_planner::api::session::Session;
-use clap::{Parser};
-use crate::{error, subcommands::top_level::Command};
+use clap::{ArgMatches, Command};
 
-#[derive(Debug, Parser)]
-#[command(name = "")]
-#[command(about, no_binary_name(true))]
-pub struct Cli {
-    #[command(subcommand)]
-    pub command: Command,
-}
+use crate::{Error, NonError};
 
-pub fn prompt_user<T>(
-    parser: T,
-    session: &Session,
-    user_requested_exit: &mut bool
-) -> Result<(), error::Error>
+pub async fn shell<T>(
+    command: Command,
+    parse: T,
+    session: &mut Session,
+) -> Result<NonError, Error> 
 where
-T: FnOnce(&Command, &Session, &mut bool) -> Result<(), error::Error>
+T: AsyncFnOnce(&ArgMatches, &mut Session) -> Result<NonError, Error>,
 {
     print!("> ");
     stdout().flush().expect("Failed to print to stdout");
 
-    let buffer = prompt_user_text()?;
-    
-    let cli_result = Cli::try_parse_from(buffer.split_whitespace())?;
-    parser(&cli_result.command, session, user_requested_exit)
-}
-
-pub fn prompt_user_text () -> Result<String, error::Error> {
     let mut buffer = String::new();
-    stdin().read_line(&mut buffer)?;
+    stdin().read_line(&mut buffer).expect("Error reading stdin");
+    
+    let arg_matches = command.try_get_matches_from(buffer.split_whitespace())?;
 
-    Ok(buffer)
+    parse(&arg_matches, session).await
 }
