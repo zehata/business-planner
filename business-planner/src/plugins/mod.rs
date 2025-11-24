@@ -1,19 +1,21 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::{self};
+use std::io::{BufRead, BufReader, Write};
 use std::path::{PathBuf, absolute};
-use std::process::{Command, Output};
+use std::process::{Command, Stdio};
 
+use crate::error::Error;
 use crate::plugins::error::{PluginError, PluginDiscoveryError};
 
 pub mod error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PluginType {
     Python,
     Binary,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Plugin {
     path: PathBuf,
     plugin_type: PluginType,
@@ -105,17 +107,53 @@ pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryE
     Ok(plugins)
 }
 
-pub fn run_script (plugin: &Plugin) -> Result<Output, PluginError> {
+pub fn run_script (plugin: &Plugin) -> Result<String, PluginError> {
     let absolute_path = absolute(plugin.path.clone())?;
-    let absolute_path = absolute_path.as_os_str();
-    Ok(match plugin.plugin_type {
+    let Some(parent) = absolute_path.parent() else {
+        return Err(PluginError::PluginMissingError)
+    };
+    match plugin.plugin_type {
         PluginType::Python => {
-            Command::new("python3").args([absolute_path]).output()
+            let mut command = Command::new("./.venv/bin/python");
+            command.current_dir(parent);
+            command.args([absolute_path]);
+            command.stdin(Stdio::piped());
+            command.stdout(Stdio::piped());
+            let mut child_process = command.spawn()?;
+
+            let stdin = child_process.stdin.as_mut().unwrap();
+            let mut stdout = BufReader::new(child_process.stdout.as_mut().unwrap()).lines();
+            
+            let mut buf = String::new();
+            while let Some(Ok(response)) = stdout.next() {
+                if &response[..] == "request_data" {
+                    println!("Sending data!");
+                    stdin.write_all("some_data\n".as_bytes()).unwrap();
+                }
+
+                buf = response;
+                println!("{buf}");
+
+                if &buf[..] == "complete" {
+                    break
+                }
+            };
+
+            child_process.wait()?;
+            Ok(buf)
         },
         PluginType::Binary => {
-            Command::new(absolute_path).output()
+            unimplemented!()
         },
-    }?)
+    }
+}
+
+pub fn run_plugin (plugin_name: &str) -> Result<String, Error> {
+    let plugins = get_plugins()?;
+    let Some(plugin) = plugins.get(plugin_name) else {
+        return Err(Error::PluginDiscoveryError(PluginDiscoveryError::PluginNotFound))
+    };
+    Ok(run_script(plugin)?)
 }
 
 // #[cfg(test)]

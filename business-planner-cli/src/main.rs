@@ -5,13 +5,14 @@ pub mod error;
 pub mod shells;
 pub mod registry;
 pub mod save;
+pub mod plugins;
 
 pub use error::{NonError, Error};
 
-use crate::{registry::{get_registry_subcommand, parse_interactive_registry_subcommand, parse_non_interactive_registry_subcommand}, save::{get_save_interactive_subcommand, get_save_subcommand, parse_interactive_save_subcommand, parse_non_interactive_save_subcommand}, shells::{interactive, non_interactive}};
+use crate::{plugins::{get_plugins_subcommand, parse_interactive_plugins_subcommand}, registry::{get_registry_subcommand, parse_interactive_registry_subcommand, parse_non_interactive_registry_subcommand}, save::{get_save_interactive_subcommand, get_save_subcommand, parse_interactive_save_subcommand, parse_non_interactive_save_subcommand}, shells::{interactive, non_interactive}};
 
 fn entry_cli() -> Command {
-    Command::new("business_planner_cli")
+    Command::new("business-planner-cli")
         .arg(
             Arg::new("interactive")
                 .global(true)
@@ -71,6 +72,7 @@ fn get_main_menu_subcommand() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommands([
+            get_plugins_subcommand(),
             get_registry_subcommand(),
             get_save_subcommand(),
             Command::new("exit"),
@@ -79,6 +81,15 @@ fn get_main_menu_subcommand() -> Command {
 
 async fn parse_interactive_main_menu_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
     match command {
+        "plugins" => {
+            shells::interactive::shell(
+                get_plugins_subcommand().get_subcommands().map(|command| {
+                    command.get_name().to_string()
+                }).collect(),
+                parse_interactive_plugins_subcommand,
+                session,
+            ).await
+        },
         "registry" => {
             shells::interactive::shell(
                 get_registry_subcommand().get_subcommands().map(|command| {
