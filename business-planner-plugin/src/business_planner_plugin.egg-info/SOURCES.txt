@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-src/business_planner_plugin/__init__.py
-src/business_planner_plugin/main.py
-src/business_planner_plugin.egg-info/PKG-INFO
-src/business_planner_plugin.egg-info/SOURCES.txt
-src/business_planner_plugin.egg-info/dependency_links.txt
-src/business_planner_plugin.egg-info/top_level.txt
