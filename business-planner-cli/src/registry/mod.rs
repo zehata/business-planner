@@ -1,5 +1,9 @@
+use std::io::{Write, stdout};
+
 use business_planner::api::session::Session;
 use clap::{Arg, ArgMatches, Command};
+use inquire::Text;
+use uuid::Uuid;
 
 use crate::{Error, NonError, registry::{create::{get_create_subcommand, parse_interactive_create_subcommand, parse_non_interactive_create_subcommand}, read::{get_read_subcommand, parse_interactive_read_subcommand, parse_non_interactive_read_subcommand}}, shells::interactive};
 
@@ -22,14 +26,14 @@ pub async fn parse_interactive_registry_subcommand(command: &str, session: &mut 
     match command {
         "create" => {
             interactive::shell(
-                get_registry_items(),
+                get_registry_item_types(),
                 parse_interactive_create_subcommand,
                 session,
             ).await
         },
         "read" => {
             interactive::shell(
-                get_registry_items(),
+                get_registry_item_types(),
                 parse_interactive_read_subcommand,
                 session,
             ).await
@@ -56,7 +60,7 @@ trait TakesRegistryItemType {
 
 const REGISTRY_ITEMS: [&str; 2] = ["material", "store"];
 
-fn get_registry_items() -> Vec<String> {
+pub fn get_registry_item_types() -> Vec<String> {
     REGISTRY_ITEMS.into_iter().map(|item_type| {
         item_type.to_string()
     }).collect()
@@ -72,6 +76,9 @@ impl TakesRegistryItemType for Command {
         )
     }
 }
+trait TakesRegistryItemDetails {
+    fn takes_registry_item_details(self) -> Command;
+}
 
 trait TakesRegistryItemId {
     fn takes_registry_item_id_arg(self) -> Command;
@@ -84,4 +91,29 @@ impl TakesRegistryItemId for Command {
                 .required(true)
         )
     }
+}
+
+pub fn retrying_prompt_uuid() -> Result<Uuid, Error> {
+    println!("item id to read? (Esc or Ctrl+C to cancel)");
+    stdout().flush().expect("Failed to print to stdout");
+
+    let mut uuid: Option<Uuid> = None;
+    while uuid.is_none() {
+        match Text::new("id:").prompt() {
+            Ok(input) => {
+                match Uuid::parse_str(&input) {
+                    Ok(parsed) => { uuid = Some(parsed) },
+                    Err(_) => continue,
+                }
+            },
+            _ => {
+                return Err(Error::UserCancelled)
+            },
+        };
+
+        println!("Input is invalid");
+        stdout().flush().expect("Failed to print to stdout");
+    };
+
+    Ok(uuid.expect("Loop only ends when uuid is not None"))
 }

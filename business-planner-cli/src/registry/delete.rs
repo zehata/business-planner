@@ -1,11 +1,9 @@
-use std::io::{Write, stdout};
 
-use business_planner::api::{registry::{Material, RegistryItem, Store}, session::Session};
+use business_planner::api::{registry::RegistryItemType, session::Session};
 use clap::{ArgMatches, Command};
-use inquire::Text;
 use uuid::Uuid;
 
-use crate::{Error, NonError, registry::{TakesRegistryItemId}};
+use crate::{Error, NonError, registry::{TakesRegistryItemId, retrying_prompt_uuid}};
 
 pub fn get_read_subcommand() -> Command {
     Command::new("read")
@@ -13,40 +11,15 @@ pub fn get_read_subcommand() -> Command {
         .takes_registry_item_id_arg()
 }
 
-pub fn retrying_prompt_uuid() -> Result<Uuid, Error> {
-    println!("item id to read? (Esc or Ctrl+C to cancel)");
-    stdout().flush().expect("Failed to print to stdout");
-
-    let mut uuid: Option<Uuid> = None;
-    while uuid.is_none() {
-        match Text::new("id:").prompt() {
-            Ok(input) => {
-                match Uuid::parse_str(&input) {
-                    Ok(parsed) => { uuid = Some(parsed) },
-                    Err(_) => continue,
-                }
-            },
-            _ => {
-                return Err(Error::UserCancelled)
-            },
-        };
-
-        println!("Input is invalid");
-        stdout().flush().expect("Failed to print to stdout");
-    };
-
-    Ok(uuid.expect("Loop only ends when uuid is not None"))
-}
-
 pub async fn parse_interactive_delete_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
     let id = retrying_prompt_uuid()?;
     match command {
         "material" => {
-            Material::delete_in_session(id, session);
+            session.delete(RegistryItemType::Material, id);
             Ok(NonError::Continue)
         },
         "store" => {
-            Store::delete_in_session(id, session);
+            session.delete(RegistryItemType::Store, id);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),
@@ -67,11 +40,11 @@ pub async fn parse_non_interactive_delete_subcommand(arg_matches: &ArgMatches, s
     
     match &item_type[..] {
         "material" => {
-            Material::delete_in_session(id, session);
+            session.delete(RegistryItemType::Material, id);
             Ok(NonError::Continue)
         },
         "store" => {
-            Store::delete_in_session(id, session);
+            session.delete(RegistryItemType::Store, id);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput)

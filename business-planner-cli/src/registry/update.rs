@@ -1,36 +1,37 @@
-use business_planner::api::{registry::{Material, RegistryItem, Store}, session::Session};
-use clap::{ArgMatches, Command};
-use inquire::Text;
+use business_planner::api::{registry::{RegistryItem, RegistryItemType}, session::Session};
+use clap::{Arg, ArgMatches, Command};
 use uuid::Uuid;
 
-use crate::{Error, NonError, registry::{TakesRegistryItemId}};
+use crate::{Error, NonError, registry::retrying_prompt_uuid};
 
 pub fn get_read_subcommand() -> Command {
     Command::new("read")
         .no_binary_name(true)
-        .takes_registry_item_id_arg()
-}
-
-pub fn retrying_prompt_uuid() -> Uuid {
-    let mut uuid = Uuid::parse_str("");
-    while uuid.is_err() {
-        let Ok(user_input) = Text::new("id").prompt() else {
-            continue;
-        };
-        uuid = Uuid::parse_str(&user_input);
-    };
-    uuid.expect("Loop does not end until uuid is valid")
+        .subcommands([
+            Command::new("material")
+                .args([
+                    Arg::new("name"),
+                ]),
+            Command::new("store")
+                .args([
+                    Arg::new("name"),
+                ]),
+        ])
 }
 
 pub async fn parse_interactive_update_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let id = retrying_prompt_uuid();
+    let id = retrying_prompt_uuid()?;
     match command {
         "material" => {
-            Material::read_in_session(id, session);
+            let Some(RegistryItem::Material(material)) = session.read(RegistryItemType::Material, id) else {
+                return Err(Error::InvalidInput)
+            };
             Ok(NonError::Continue)
         },
         "store" => {
-            Store::read_in_session(id, session);
+            let Some(RegistryItem::Store(store)) = session.read(RegistryItemType::Store, id) else {
+                return Err(Error::InvalidInput)
+            };
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),
@@ -51,11 +52,17 @@ pub async fn parse_non_interactive_update_subcommand(arg_matches: &ArgMatches, s
     
     match &item_type[..] {
         "material" => {
-            Material::update_in_session(id, Material{}, session);
+            let Some(RegistryItem::Material(material)) = session.read(RegistryItemType::Material, id) else {
+                return Err(Error::InvalidInput)
+            };
+            material.set_name("test");
             Ok(NonError::Continue)
         },
         "store" => {
-            Store::update_in_session(id, Store { usage_data_source: None }, session);
+            let Some(RegistryItem::Store(store)) = session.read(RegistryItemType::Store, id) else {
+                return Err(Error::InvalidInput)
+            };
+            store.set_name("test");
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput)

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{registry::structs::{material::Material, store::Store}, session::Session};
+use crate::registry::structs::{material::Material, store::Store};
 
 pub mod structs;
 
@@ -13,29 +13,50 @@ pub struct Registry {
     stores: HashMap<Uuid, Store>,
 }
 
-pub(crate) trait GetItemRegistry {
-    fn get_item_registry(session: &mut Session) -> &mut HashMap<Uuid, Self> where Self: Sized;
+pub enum RegistryItemType {
+    Material,
+    Store,
 }
 
-pub trait RegistryItem: GetItemRegistry + Sized {
-    fn create_in_session(value: Self, session: &mut Session){
-        let item_registry = Self::get_item_registry(session);
+#[derive(Serialize)]
+pub enum RegistryItem<'a> {
+    Material(&'a mut Material),
+    Store(&'a mut Store),
+}
+
+impl Registry {
+    pub fn create(&mut self, item_type: RegistryItemType) {
         let id = Uuid::new_v4();
-        item_registry.insert(id, value);
+        match item_type {
+            RegistryItemType::Material => {
+                self.materials.insert(id, Material::default());
+            },
+            RegistryItemType::Store => {
+                self.stores.insert(id, Store::default());
+            }
+        }
     }
 
-    fn read_in_session(id: Uuid, session: &mut Session) {
-        let item_registry = Self::get_item_registry(session);
-        item_registry.get(&id);
+    pub fn read<'a>(&'a mut self, item_type: RegistryItemType, id: Uuid) -> Option<RegistryItem<'a>> {
+        match item_type {
+            RegistryItemType::Material => {
+                Some(RegistryItem::Material(self.materials.get_mut(&id)?))
+            },
+            RegistryItemType::Store => {
+                Some(RegistryItem::Store(self.stores.get_mut(&id)?))
+            },
+        }
     }
 
-    fn update_in_session(id: Uuid, value: Self, session: &mut Session) {
-        let item_registry = Self::get_item_registry(session);
-        item_registry.insert(id, value);
-    }
 
-    fn delete_in_session(id: Uuid, session: &mut Session) {
-        let item_registry = Self::get_item_registry(session);
-        item_registry.remove(&id);
+    pub fn delete(&mut self, item_type: RegistryItemType, id: Uuid) {
+        match item_type {
+            RegistryItemType::Material => {
+                self.materials.remove(&id);
+            },
+            RegistryItemType::Store => {
+                self.stores.remove(&id);
+            },
+        }
     }
 }

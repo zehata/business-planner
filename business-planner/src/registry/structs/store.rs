@@ -1,21 +1,15 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-use crate::{registry::{GetItemRegistry, RegistryItem, structs::DataSource}, session::Session};
+use crate::{registry::{structs::DataSource}};
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
 pub struct Store {
+    pub name: Option<String>,
     pub usage_data_source: Option<DataSource>,
 }
 
-impl GetItemRegistry for Store {
-    fn get_item_registry(session: &mut Session) -> &mut HashMap<Uuid, Store> {
-        &mut session.data.registry.stores
+impl Store {
+    pub fn set_name(&mut self, name: &str) {
+        self.name = Some(name.to_string());
     }
-}
-
-impl RegistryItem for Store {
-
 }

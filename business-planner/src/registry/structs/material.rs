@@ -1,21 +1,12 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-use crate::{registry::{GetItemRegistry, RegistryItem}, session::Session};
-
-#[derive(Serialize, Deserialize, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Debug, Default)]
 pub struct Material {
-
+    name: Option<String>
 }
 
-impl GetItemRegistry for Material {
-    fn get_item_registry(session: &mut Session) -> &mut HashMap<Uuid, Material> {
-        &mut session.data.registry.materials
+impl Material {
+    pub fn set_name(&mut self, name: &str) {
+        self.name = Some(name.to_string());
     }
-}
-
-impl RegistryItem for Material {
-
 }

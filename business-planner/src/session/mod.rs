@@ -1,7 +1,8 @@
 use std::{fs, path::{self, Path, PathBuf}};
 
-use crate::{registry::Registry, session::error::{LoadSessionError, SaveSessionError}};
+use crate::{registry::{Registry, RegistryItem, RegistryItemType}, session::error::{LoadSessionError, SaveSessionError}};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 pub mod error;
 
@@ -24,6 +25,20 @@ impl Default for SessionData {
 pub struct Session {
     pub last_save_location: Option<PathBuf>,
     pub(crate) data: SessionData,
+}
+
+impl Session {
+    pub fn create(&mut self, item_type: RegistryItemType) {
+        self.data.registry.create(item_type);
+    }
+
+    pub fn read(&mut self, item_type: RegistryItemType, id: Uuid) -> Option<RegistryItem<'_>> {
+        self.data.registry.read(item_type, id)
+    }
+
+    pub fn delete(&mut self, item_type: RegistryItemType, id: Uuid) {
+        self.data.registry.delete(item_type, id);
+    }
 }
 
 pub fn create_session() -> Session {
