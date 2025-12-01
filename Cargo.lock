@@ -229,6 +229,7 @@ dependencies = [
  "clap",
  "inquire",
  "jiff",
+ "shlex",
  "strum",
  "strum_macros",
  "tokio",

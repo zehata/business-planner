@@ -1,4 +1,4 @@
-use business_planner::api::{registry::{RegistryItem, RegistryItemType}, session::Session};
+use business_planner::api::{registry::{Material, Store}, session::Session};
 use clap::{ArgMatches, Command};
 use uuid::Uuid;
 
@@ -14,15 +14,17 @@ pub async fn parse_interactive_read_subcommand(command: &str, session: &mut Sess
     let id = retrying_prompt_uuid()?;
     match command {
         "material" => {
-            let Some(RegistryItem::Material(material)) = session.read(RegistryItemType::Material, id) else {
+            let Some(material) = session.read::<Material>(&id) else {
                 return Err(Error::InvalidInput)
             };
+            println!("{}", material);
             Ok(NonError::Continue)
         },
         "store" => {
-            let Some(RegistryItem::Store(store)) = session.read(RegistryItemType::Store, id) else {
+            let Some(store) = session.read::<Store>(&id) else {
                 return Err(Error::InvalidInput)
             };
+            println!("{}", store);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),
@@ -43,15 +45,17 @@ pub async fn parse_non_interactive_read_subcommand(arg_matches: &ArgMatches, ses
     
     match &item_type[..] {
         "material" => {
-            let Some(RegistryItem::Material(material)) = session.read(RegistryItemType::Material, id) else {
+            let Some(material) = session.read::<Material>(&id) else {
                 return Err(Error::InvalidInput)
             };
+            println!("{}", material);
             Ok(NonError::Continue)
         },
         "store" => {
-            let Some(RegistryItem::Store(store)) = session.read(RegistryItemType::Store, id) else {
+            let Some(store) = session.read::<Store>(&id) else {
                 return Err(Error::InvalidInput)
             };
+            println!("{}", store);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput)

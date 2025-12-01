@@ -11,6 +11,7 @@ pub mod create;
 pub mod read;
 pub mod update;
 pub mod delete;
+pub mod list;
 
 pub fn get_registry_subcommand() -> Command {
     Command::new("registry")
@@ -75,9 +76,6 @@ impl TakesRegistryItemType for Command {
                 .value_parser(REGISTRY_ITEMS),
         )
     }
-}
-trait TakesRegistryItemDetails {
-    fn takes_registry_item_details(self) -> Command;
 }
 
 trait TakesRegistryItemId {

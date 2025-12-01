@@ -1,6 +1,6 @@
 use std::{fs, path::{self, Path, PathBuf}};
 
-use crate::{registry::{Registry, RegistryItem, RegistryItemType}, session::error::{LoadSessionError, SaveSessionError}};
+use crate::{registry::{Registry, RegistryItem}, session::error::{LoadSessionError, SaveSessionError}};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -28,16 +28,25 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn create(&mut self, item_type: RegistryItemType) {
-        self.data.registry.create(item_type);
+    pub fn create<T>(&mut self) -> Uuid
+    where T: RegistryItem<Item = T> {
+        self.data.registry.create::<T>()
     }
 
-    pub fn read(&mut self, item_type: RegistryItemType, id: Uuid) -> Option<RegistryItem<'_>> {
-        self.data.registry.read(item_type, id)
+    pub fn read<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+        self.data.registry.read::<T>(id)
     }
 
-    pub fn delete(&mut self, item_type: RegistryItemType, id: Uuid) {
-        self.data.registry.delete(item_type, id);
+    pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<Item = T> {
+        self.data.registry.delete::<T>(id);
+    }
+
+    pub fn list<T>(&mut self) -> Vec<String> where T: RegistryItem<Item = T> {
+        self.data.registry.list::<T>()
+    }
+
+    pub fn list_names<T>(&mut self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
+        self.data.registry.list_names::<T>()
     }
 }
 

@@ -1,5 +1,5 @@
 
-use business_planner::api::{registry::RegistryItemType, session::Session};
+use business_planner::api::{registry::{Material, Store}, session::Session};
 use clap::{ArgMatches, Command};
 use uuid::Uuid;
 
@@ -13,13 +13,14 @@ pub fn get_read_subcommand() -> Command {
 
 pub async fn parse_interactive_delete_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
     let id = retrying_prompt_uuid()?;
+
     match command {
         "material" => {
-            session.delete(RegistryItemType::Material, id);
+            session.delete::<Material>(&id);
             Ok(NonError::Continue)
         },
         "store" => {
-            session.delete(RegistryItemType::Store, id);
+            session.delete::<Store>(&id);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),
@@ -40,11 +41,11 @@ pub async fn parse_non_interactive_delete_subcommand(arg_matches: &ArgMatches, s
     
     match &item_type[..] {
         "material" => {
-            session.delete(RegistryItemType::Material, id);
+            session.delete::<Material>(&id);
             Ok(NonError::Continue)
         },
         "store" => {
-            session.delete(RegistryItemType::Store, id);
+            session.delete::<Store>(&id);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput)

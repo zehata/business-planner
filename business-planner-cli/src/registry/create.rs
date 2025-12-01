@@ -1,4 +1,4 @@
-use business_planner::api::{registry::RegistryItemType, session::Session};
+use business_planner::api::{registry::{Material, Store}, session::Session};
 use clap::{ArgMatches, Command};
 
 use crate::{Error, NonError, registry::TakesRegistryItemType};
@@ -12,11 +12,11 @@ pub fn get_create_subcommand() -> Command {
 pub async fn parse_interactive_create_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
     match command {
         "material" => {
-            session.create(RegistryItemType::Material);
+            session.create::<Material>();
             Ok(NonError::Continue)
         },
         "store" => {
-            session.create(RegistryItemType::Store);
+            session.create::<Store>();
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),
@@ -26,11 +26,11 @@ pub async fn parse_interactive_create_subcommand(command: &str, session: &mut Se
 pub async fn parse_non_interactive_create_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
     match arg_matches.subcommand() {
         Some(("material", _)) => {
-            session.create(RegistryItemType::Material);
+            session.create::<Material>();
             Ok(NonError::Continue)
         },
         Some(("store", _)) => {
-            session.create(RegistryItemType::Store);
+            session.create::<Store>();
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),

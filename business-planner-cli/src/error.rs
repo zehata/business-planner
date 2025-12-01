@@ -2,7 +2,8 @@ use std::fmt;
 
 use business_planner::api::error::BusinessPlannerError;
 pub use clap::Error as ClapError;
-use inquire::InquireError;
+pub use inquire::InquireError;
+pub use uuid::Error as UuidError;
 
 pub enum NonError {
     Continue,
@@ -15,6 +16,8 @@ pub enum Error {
     BusinessPlannerError(BusinessPlannerError),
     ClapError(ClapError),
     InquireError(InquireError),
+    UuidError(UuidError),
+    ErroneousShlexInput,
 }
 
 impl fmt::Debug for Error {
@@ -25,6 +28,8 @@ impl fmt::Debug for Error {
             Error::BusinessPlannerError(business_planner_error) => write!(f, "{}", business_planner_error),
             Error::ClapError(clap_error) => write!(f, "{clap_error}"),
             Error::InquireError(inquire_error) => write!(f, "{inquire_error}"),
+            Error::UuidError(uuid_error) => write!(f, "{uuid_error}"),
+            Error::ErroneousShlexInput => write!(f, "Erroneous input provided to command splitter"),
         }
     }
 }
@@ -44,5 +49,11 @@ impl From<ClapError> for Error {
 impl From<InquireError> for Error {
     fn from(value: InquireError) -> Self {
         Error::InquireError(value)
+    }
+}
+
+impl From<UuidError> for Error {
+    fn from(value: UuidError) -> Self {
+        Error::UuidError(value)
     }
 }

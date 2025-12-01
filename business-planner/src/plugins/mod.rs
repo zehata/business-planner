@@ -169,7 +169,7 @@ impl PluginProcess {
         }
     }
 
-    pub fn send_response(&mut self, item: RegistryItem) {
+    pub fn send_response<T: RegistryItem>(&mut self, item: &mut T) {
         let mut ser = Serializer::new(Vec::new());
         let value = json!(item);
         value.serialize(&mut ser).unwrap();

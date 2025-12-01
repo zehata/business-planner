@@ -1,4 +1,4 @@
-use business_planner::api::{plugins::{PluginProcess, PluginResponse, get_plugins, run_plugin}, registry::RegistryItemType, session::Session};
+use business_planner::api::{plugins::{PluginProcess, PluginResponse, get_plugins, run_plugin}, registry::{Material, Store}, session::Session};
 use inquire::Select;
 
 use crate::{Error, NonError, registry::{get_registry_item_types, retrying_prompt_uuid}};
@@ -13,13 +13,13 @@ fn retrying_send_response (plugin_process: &mut PluginProcess, item_type: String
         let id = retrying_prompt_uuid()?;
         match &item_type[..] {
             "material" => {
-                if let Some(material) = session.read(RegistryItemType::Material, id) {
+                if let Some(material) = session.read::<Material>(&id) {
                     plugin_process.send_response(material);
                     registry_item_valid = true;
                 };
             },
             "store" => {
-                if let Some(store) = session.read(RegistryItemType::Store, id) {
+                if let Some(store) = session.read::<Store>(&id) {
                     plugin_process.send_response(store);
                     registry_item_valid = true;
                 };

@@ -19,7 +19,27 @@ T: AsyncFnOnce(&ArgMatches, &mut Session) -> Result<NonError, Error>,
     let mut buffer = String::new();
     stdin().read_line(&mut buffer).expect("Error reading stdin");
     
-    let arg_matches = command.try_get_matches_from(buffer.split_whitespace())?;
+    parse_buffer(&buffer, command, parse, session).await
+}
 
+
+pub async fn parse_buffer<T>(
+    buffer: &str,
+    command: Command,
+    parse: T,
+    session: &mut Session,
+) -> Result<NonError, Error> 
+where
+T: AsyncFnOnce(&ArgMatches, &mut Session) -> Result<NonError, Error>,
+{
+    let arg_matches = get_command_matches(buffer, command)?;
     parse(&arg_matches, session).await
+}
+
+pub fn get_command_matches(buffer: &str, command: Command) -> Result<ArgMatches, Error> {
+    let Some(args) = shlex::split(buffer) else {
+        return Err(Error::ErroneousShlexInput)
+    };
+    let arg_matches = command.try_get_matches_from(args)?;
+    Ok(arg_matches)
 }
