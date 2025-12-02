@@ -26,7 +26,7 @@ pub async fn parse_interactive_update_subcommand(command: &str, session: &mut Se
         },
         "store" => {
             interactive::shell(
-                get_update_store_interactive_subcommand(),
+                get_update_store_interactive_subcommand(session),
                 parse_update_store_interactive_subcommand,
                 session
             ).await

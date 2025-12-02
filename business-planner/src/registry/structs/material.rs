@@ -11,6 +11,10 @@ pub struct Material {
 }
 
 impl Material {
+    pub fn new() -> Material {
+        Material::default()
+    }
+
     pub fn get_name(&self) -> Option<&str> {
         self.name.as_deref()
     }

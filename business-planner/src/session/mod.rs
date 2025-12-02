@@ -28,9 +28,9 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn create<T>(&mut self) -> Uuid
+    pub fn create<T>(&mut self, item: T) -> Uuid
     where T: RegistryItem<Item = T> {
-        self.data.registry.create::<T>()
+        self.data.registry.create::<T>(item)
     }
 
     pub fn read<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {

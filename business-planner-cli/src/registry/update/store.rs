@@ -62,10 +62,8 @@ pub fn select_store<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> O
     None
 }
 
-pub fn get_update_store_interactive_subcommand() -> Vec<String> {
-    ["by_id", "by_name"].into_iter().map(|by_field| {
-        by_field.to_string()
-    }).collect()
+pub fn get_update_store_interactive_subcommand(session: &mut Session) -> Vec<String> {
+    session.list::<Store>()
 }
 
 pub async fn parse_update_store_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
@@ -197,7 +195,7 @@ mod test {
     #[tokio::test]
     async fn test_update_store() {
         let mut session = create_session();
-        let uuid = session.create::<Store>();
+        let uuid = session.create(Store::new());
         
         let buffer = format!("--by_id {} --name \"test name\"", uuid);
         let result = parse(&buffer, &mut session).await;

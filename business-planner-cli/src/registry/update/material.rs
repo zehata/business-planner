@@ -89,7 +89,7 @@ mod test {
     #[tokio::test]
     async fn test_update_material() {
         let mut session = create_session();
-        let uuid = session.create::<Material>();
+        let uuid = session.create(Material::new());
         
         let buffer = format!("--by_id {} --name \"test name\"", uuid);
         let result = parse(&buffer, &mut session).await;

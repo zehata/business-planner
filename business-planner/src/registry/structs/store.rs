@@ -7,11 +7,15 @@ use crate::registry::{Registry, RegistryItem};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
 pub struct Store {
-    pub name: Option<String>,
-    pub timestamps: Option<DataSource>,
+    name: Option<String>,
+    timestamps: Option<DataSource>,
 }
 
 impl Store {
+    pub fn new() -> Store {
+        Store::default()
+    }
+
     pub fn get_name(&self) -> Option<&str> {
         self.name.as_deref()
     }

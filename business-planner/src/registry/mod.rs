@@ -25,9 +25,9 @@ pub trait RegistryItem: Serialize {
 
     fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self::Item>;
 
-    fn create(registry: &mut Registry) -> Uuid {
+    fn create(registry: &mut Registry, item: Self::Item) -> Uuid {
         let uuid = Uuid::new_v4();
-        Self::get_item_registry_mut(registry).insert(uuid, Self::Item::default());
+        Self::get_item_registry_mut(registry).insert(uuid, item);
         uuid
     }
 
@@ -49,9 +49,9 @@ pub trait RegistryItem: Serialize {
 }
 
 impl Registry {
-    pub fn create<T>(&mut self) -> Uuid
+    pub fn create<T>(&mut self, item: T) -> Uuid
     where T: RegistryItem<Item = T> {
-        T::create(self)
+        T::create(self, item)
     }
 
     pub fn read<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
