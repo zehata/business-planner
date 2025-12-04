@@ -33,19 +33,28 @@ impl Session {
         self.data.registry.create::<T>(item)
     }
 
-    pub fn read<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+    pub fn read<T>(&self, id: &Uuid) -> Option<&T> where T: RegistryItem<Item = T> {
         self.data.registry.read::<T>(id)
+    }
+
+    pub fn get<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+        self.data.registry.get::<T>(id)
+    }
+
+    pub fn update<T>(&mut self, id: &Uuid, item: T)
+    where T: RegistryItem<Item = T> {
+        self.data.registry.update::<T>(id, item)
     }
 
     pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<Item = T> {
         self.data.registry.delete::<T>(id);
     }
 
-    pub fn list<T>(&mut self) -> Vec<String> where T: RegistryItem<Item = T> {
+    pub fn list<T>(&self) -> Vec<String> where T: RegistryItem<Item = T> {
         self.data.registry.list::<T>()
     }
 
-    pub fn list_names<T>(&mut self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
+    pub fn list_names<T>(&self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
         self.data.registry.list_names::<T>()
     }
 }

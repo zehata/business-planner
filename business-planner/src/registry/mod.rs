@@ -13,13 +13,8 @@ pub struct Registry {
     stores: HashMap<Uuid, Store>,
 }
 
-pub enum RegistryItemType {
-    Material,
-    Store,
-}
-
-pub trait RegistryItem: Serialize {
-    type Item: Default;
+pub trait RegistryItem: Serialize + Default {
+    type Item;
 
     fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Self::Item>;
 
@@ -31,15 +26,23 @@ pub trait RegistryItem: Serialize {
         uuid
     }
 
-    fn read<'a>(id: &Uuid, registry: &'a mut Registry) -> Option<&'a mut Self::Item> {
+    fn read<'a>(id: &Uuid, registry: &'a Registry) -> Option<&'a Self::Item> {
+        Self::get_item_registry(registry).get(id)
+    }
+
+    fn get<'a>(id: &Uuid, registry: &'a mut Registry) -> Option<&'a mut Self::Item> {
         Self::get_item_registry_mut(registry).get_mut(id)
+    }
+
+    fn update(id: &Uuid, registry: &mut Registry, item: Self::Item) {
+        Self::get_item_registry_mut(registry).insert(*id, item);
     }
 
     fn delete(id: &Uuid, registry: &mut Registry) -> Option<Self::Item>{
         Self::get_item_registry_mut(registry).remove(id)
     }
 
-    fn list(registry: &mut Registry) -> Vec<String> {
+    fn list(registry: &Registry) -> Vec<String> {
         Self::get_item_registry(registry).keys().map(|key| {
             key.to_string()
         }).collect()
@@ -54,19 +57,28 @@ impl Registry {
         T::create(self, item)
     }
 
-    pub fn read<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+    pub fn read<T>(&self, id: &Uuid) -> Option<&T> where T: RegistryItem<Item = T> {
         T::read(id, self)
+    }
+
+    pub fn get<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+        T::get(id, self)
+    }
+
+    pub fn update<T>(&mut self, id: &Uuid, item: T)
+    where T: RegistryItem<Item = T> {
+        T::update(id, self, item)
     }
 
     pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<Item = T> {
         T::delete(id, self);
     }
 
-    pub fn list<T>(&mut self) -> Vec<String> where T: RegistryItem<Item = T> {
+    pub fn list<T>(&self) -> Vec<String> where T: RegistryItem<Item = T> {
         T::list(self)
     }
 
-    pub fn list_names<T>(&mut self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
+    pub fn list_names<T>(&self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
         T::list_names(self)
     }
 }

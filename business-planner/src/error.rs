@@ -1,5 +1,4 @@
-use std::fmt;
-use std::string::FromUtf8Error;
+use std::{fmt, string::FromUtf8Error};
 
 use crate::{api::session::{LoadSessionError, SaveSessionError}, plugins::error::{PluginDiscoveryError, PluginError}};
 

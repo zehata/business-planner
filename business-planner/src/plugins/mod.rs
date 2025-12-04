@@ -1,12 +1,13 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::{self};
-use std::io::{self, BufRead, BufReader, Lines, Write};
+use std::io::{BufRead, BufReader, Lines, Write};
 use std::path::{PathBuf, absolute};
 use std::process::{Child, ChildStdin, ChildStdout, Command, ExitStatus, Stdio};
 use serde::Serialize;
 
 use sonic_rs::{Serializer, json};
 
+use crate::api::registry::Material;
 use crate::error::Error;
 use crate::plugins::error::{PluginError, PluginDiscoveryError};
 use crate::registry::RegistryItem;
@@ -77,7 +78,6 @@ pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryE
 
         let file_names = files.iter().filter_map(|file| {
             let file_name = file.file_prefix()?;
-            
             file_name.to_str()
         });
 
@@ -111,8 +111,46 @@ pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryE
     Ok(plugins)
 }
 
-pub enum PluginResponse {
-    DataRequest(String),
+pub struct AnyDataRequest<'a> {
+    stdin: &'a mut ChildStdin,
+}
+
+impl<T: RegistryItem> DataRequest<T> for AnyDataRequest<'_> {
+    fn get_stdin(&mut self) -> &mut ChildStdin {
+        self.stdin
+    }
+}
+
+pub struct MaterialDataRequest<'a> {
+    stdin: &'a mut ChildStdin,
+}
+
+impl DataRequest<Material> for MaterialDataRequest<'_> {
+    fn get_stdin(&mut self) -> &mut ChildStdin {
+        self.stdin
+    }
+}
+
+pub trait DataRequest<T: RegistryItem> {
+    fn get_stdin(&mut self) -> &mut ChildStdin;
+
+    fn send_response(&mut self, item: &T) {
+        let mut ser = Serializer::new(Vec::new());
+
+        let value = json!(item);
+        value.serialize(&mut ser).unwrap();
+
+        let mut bytes = ser.into_inner();
+        bytes.push(b'\n');
+        
+        let stdin = self.get_stdin();
+        stdin.write_all(&bytes).unwrap();
+    }
+}
+
+pub enum PluginResponse<'a> {
+    AnyDataRequest(AnyDataRequest<'a>),
+    MaterialDataRequest(MaterialDataRequest<'a>),
     Message(String),
     Report(String),
     ProcessEnded,
@@ -124,7 +162,7 @@ pub struct PluginResponses {
 }
 
 impl PluginResponses {
-    pub fn try_next(&mut self) -> Option<Result<PluginResponse, Error>> {
+    pub fn try_next(&mut self) -> Option<Result<PluginResponse<'_>, Error>> {
         let result = self.stdout.next()?;
 
         let result = match result {
@@ -133,7 +171,9 @@ impl PluginResponses {
         };
 
         Some(Ok(match &result[..] {
-            "request_data" => PluginResponse::DataRequest("Data requested".to_string()),
+            "request_data" => {
+                PluginResponse::AnyDataRequest(AnyDataRequest { stdin: &mut self.stdin })
+            },
             "report" => {
                 let report = self.stdout.next()?;
 
@@ -168,19 +208,12 @@ impl PluginProcess {
             responses,
         }
     }
-
-    pub fn send_response<T: RegistryItem>(&mut self, item: &mut T) {
-        let mut ser = Serializer::new(Vec::new());
-        let value = json!(item);
-        value.serialize(&mut ser).unwrap();
-        let mut bytes = ser.into_inner();
-        bytes.push(b'\n');
-        let stdin = &mut self.responses.stdin;
-        stdin.write_all(&bytes).unwrap();
-    }
-
-    pub fn wait(&mut self) -> io::Result<ExitStatus> {
-        self.child_process.wait()
+    
+    pub fn await_exit(&mut self) -> Result<ExitStatus, Error> {
+        match self.child_process.wait() {
+            Ok(exit_status) => Ok(exit_status),
+            Err(error) => Err(Error::PluginError(PluginError::IoError(error))),
+        }
     }
 }
 

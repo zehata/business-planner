@@ -1,8 +1,9 @@
-use business_planner::api::{registry::{Material, Store}, session::Session};
+use business_planner::api::{registry::{Material, RegistryItem, Store}, session::Session};
 use clap::{ArgMatches, Command};
+use inquire::{InquireError, Select};
 use uuid::Uuid;
 
-use crate::{Error, NonError, registry::{TakesRegistryItemId, retrying_prompt_uuid}};
+use crate::{Error, NonError, registry::TakesRegistryItemId};
 
 pub fn get_read_subcommand() -> Command {
     Command::new("read")
@@ -10,20 +11,25 @@ pub fn get_read_subcommand() -> Command {
         .takes_registry_item_id_arg()
 }
 
+pub async fn prompt_user_select_registry_item<'a, T>(session: &'a Session, message: &str) -> Result<&'a T, InquireError> where T: 'a + RegistryItem<Item = T> {
+    let materials = session.list_names::<T>();
+    let material_names = materials.iter().map(|(uuid, _)| {
+        uuid.to_string()
+    }).collect::<Vec<_>>();
+    let selection = Select::new(message, material_names).raw_prompt()?;
+    let (id, _) = materials.get(selection.index).unwrap();
+    Ok(session.read::<T>(id).unwrap())
+}
+
 pub async fn parse_interactive_read_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let id = retrying_prompt_uuid()?;
     match command {
         "material" => {
-            let Some(material) = session.read::<Material>(&id) else {
-                return Err(Error::InvalidInput)
-            };
+            let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
             println!("{}", material);
             Ok(NonError::Continue)
         },
         "store" => {
-            let Some(store) = session.read::<Store>(&id) else {
-                return Err(Error::InvalidInput)
-            };
+            let store = prompt_user_select_registry_item::<Store>(session, "Store id").await?;
             println!("{}", store);
             Ok(NonError::Continue)
         },

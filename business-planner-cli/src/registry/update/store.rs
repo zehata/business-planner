@@ -52,7 +52,7 @@ pub fn get_update_store_subcommand() -> Command {
 }
 
 pub fn get_store_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut Store> {
-    session.read::<Store>(uuid)
+    session.get::<Store>(uuid)
 }
 
 pub fn select_store<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut Store> {
@@ -67,7 +67,7 @@ pub fn get_update_store_interactive_subcommand(session: &mut Session) -> Vec<Str
 }
 
 pub async fn parse_update_store_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let Some(store) = session.read::<Store>(&Uuid::parse_str(command)?) else {
+    let Some(store) = session.get::<Store>(&Uuid::parse_str(command)?) else {
         return Err(Error::InvalidInput)
     };
 

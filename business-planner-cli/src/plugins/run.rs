@@ -1,33 +1,10 @@
-use business_planner::api::{plugins::{PluginProcess, PluginResponse, get_plugins, run_plugin}, registry::{Material, Store}, session::Session};
+use business_planner::api::{plugins::{DataRequest, PluginResponse, get_plugins, run_plugin}, registry::{Material, Store}, session::Session};
 use inquire::Select;
 
-use crate::{Error, NonError, registry::{get_registry_item_types, retrying_prompt_uuid}};
+use crate::{Error, NonError, registry::{get_registry_item_types, read::prompt_user_select_registry_item}};
 
 pub fn get_run_plugins_interactive_subcommand () -> Result<Vec<String>, Error> {
     Ok(get_plugins()?.keys().cloned().collect())
-}
-
-fn retrying_send_response (plugin_process: &mut PluginProcess, item_type: String, session: &mut Session) -> Result<(), Error> {
-    let mut registry_item_valid = false;
-    while !registry_item_valid {
-        let id = retrying_prompt_uuid()?;
-        match &item_type[..] {
-            "material" => {
-                if let Some(material) = session.read::<Material>(&id) {
-                    plugin_process.send_response(material);
-                    registry_item_valid = true;
-                };
-            },
-            "store" => {
-                if let Some(store) = session.read::<Store>(&id) {
-                    plugin_process.send_response(store);
-                    registry_item_valid = true;
-                };
-            },
-            _ => return Err(Error::InvalidInput),
-        };
-    }
-    Ok(())
 }
 
 pub async fn parse_interactive_run_plugins_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
@@ -35,23 +12,41 @@ pub async fn parse_interactive_run_plugins_subcommand(command: &str, session: &m
 
     while let Some(response) = plugin_process.responses.try_next() {
         match response {
-            Ok(PluginResponse::DataRequest(message)) => {
-                println!("{message}");
-                let item_type = Select::new("Item type", get_registry_item_types()).prompt()?;
-                let _ = retrying_send_response(&mut plugin_process, item_type, session);
-            },
-            Ok(PluginResponse::Message(message )) => {
-                println!("{message}")
-            },
-            Ok(PluginResponse::Report(report )) => {
-                println!("{report}")
-            },
-            Ok(PluginResponse::ProcessEnded) => {
-                println!()
+            Ok(response) => {
+                match response {
+                    PluginResponse::AnyDataRequest(mut data_request) => {
+                        let item_type = Select::new("Item type", get_registry_item_types()).prompt()?;
+                        match &item_type[..] {
+                            "material" => {
+                                let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
+                                data_request.send_response(material);
+                            },
+                            "store" => {
+                                let store = prompt_user_select_registry_item::<Store>(session, "Store id").await?;
+                                data_request.send_response(store);
+                            },
+                            _ => return Err(Error::InvalidInput),
+                        };
+                    },
+                    PluginResponse::MaterialDataRequest(mut data_request) => {
+                        let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
+                        data_request.send_response(material);
+                    },
+                    PluginResponse::Message(message) => {
+                        println!("{message}");
+                    },
+                    PluginResponse::Report(message) => {
+                        println!("{message}");
+                    },
+                    PluginResponse::ProcessEnded => {
+                        return Ok(NonError::Continue)
+                    },
+                }
             },
             Err(error) => return Err(Error::BusinessPlannerError(error))
         }
     };
 
+    plugin_process.await_exit()?;
     Ok(NonError::Continue)
 }

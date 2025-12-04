@@ -20,7 +20,7 @@ pub fn get_update_material_subcommand() -> Command {
 }
 
 pub fn get_material_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut Material> {
-    session.read::<Material>(uuid)
+    session.get::<Material>(uuid)
 }
 
 pub fn select_material<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut Material> {
@@ -38,7 +38,7 @@ pub fn get_update_material_interactive_subcommand(session: &mut Session) -> Vec<
 }
 
 pub async fn parse_update_material_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let Some(material) = session.read::<Material>(&Uuid::parse_str(command)?) else {
+    let Some(material) = session.get::<Material>(&Uuid::parse_str(command)?) else {
         return Err(Error::InvalidInput)
     };
 
