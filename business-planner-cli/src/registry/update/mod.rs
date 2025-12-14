@@ -6,8 +6,8 @@ use crate::{Error, NonError, registry::{update::{material::{get_update_material_
 pub mod material;
 pub mod store;
 
-pub fn get_read_subcommand() -> Command {
-    Command::new("read")
+pub fn get_update_subcommand() -> Command {
+    Command::new("update")
         .no_binary_name(true)
         .subcommands([
             get_update_material_subcommand(),

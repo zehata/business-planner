@@ -6,14 +6,10 @@ pub fn read() -> Result<String, ReadError> {
     let mut sheet = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(path)?;
-    let rows =sheet.records().collect::<Vec<_>>();
-    let Some(Ok(first_record)) = rows.first() else {
-        return Err(ReadError::NoRow)
-    };
+    let rows =sheet.records().collect::<Result<Vec<_>, _>>()?;
+    let first_record = rows.first().ok_or(ReadError::NoRow)?;
     let row = first_record.iter().collect::<Vec<_>>();
-    let Some(value) = row.get(1) else {
-        return Err(ReadError::NoCell)
-    };
+    let value = row.get(1).ok_or(ReadError::NoCell)?;
     
     Ok(value.to_string())
 }

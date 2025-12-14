@@ -38,9 +38,7 @@ pub fn get_update_material_interactive_subcommand(session: &mut Session) -> Vec<
 }
 
 pub async fn parse_update_material_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let Some(material) = session.get::<Material>(&Uuid::parse_str(command)?) else {
-        return Err(Error::InvalidInput)
-    };
+    let material = session.get::<Material>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
 
     let unchanged_name_hint = match material.get_name() {
         Some(name) => &format!("({})", name),
@@ -57,9 +55,7 @@ pub async fn parse_update_material_interactive_subcommand(command: &str, session
 }
 
 pub async fn parse_update_material_non_interactive_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let Some(material) = select_material(session, arg_matches) else {
-        return Err(Error::InvalidInput)
-    };
+    let material = select_material(session, arg_matches).ok_or(Error::InvalidInput)?;
 
     if let Some(name) = arg_matches.get_one::<String>("name") {
         material.set_name(name);

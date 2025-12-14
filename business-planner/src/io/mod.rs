@@ -1,7 +1,7 @@
 pub mod error;
 
 #[cfg(feature = "excel")]
-pub mod xlsx;
+pub mod excel;
 
 #[cfg(feature = "csv")]
 pub mod csv;

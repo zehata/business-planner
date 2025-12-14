@@ -37,9 +37,7 @@ T: AsyncFnOnce(&ArgMatches, &mut Session) -> Result<NonError, Error>,
 }
 
 pub fn get_command_matches(buffer: &str, command: Command) -> Result<ArgMatches, Error> {
-    let Some(args) = shlex::split(buffer) else {
-        return Err(Error::ErroneousShlexInput)
-    };
+    let args = shlex::split(buffer).ok_or(Error::ErroneousShlexInput)?;
     let arg_matches = command.try_get_matches_from(args)?;
     Ok(arg_matches)
 }

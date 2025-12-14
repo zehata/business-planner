@@ -23,6 +23,6 @@ pub async fn parse_interactive_plugins_subcommand(command: &str, session: &mut S
                 session
             ).await
         },
-        _ => unimplemented!()
+        _ => todo!()
     }
 }

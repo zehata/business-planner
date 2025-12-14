@@ -11,7 +11,9 @@ pub fn get_read_subcommand() -> Command {
         .takes_registry_item_id_arg()
 }
 
-pub async fn prompt_user_select_registry_item<'a, T>(session: &'a Session, message: &str) -> Result<&'a T, InquireError> where T: 'a + RegistryItem<Item = T> {
+pub async fn prompt_user_select_registry_item<'a, T>(session: &'a Session, message: &str) -> Result<&'a T, InquireError>
+    where
+        T: 'a + RegistryItem<RegistryItem = T> {
     let materials = session.list_names::<T>();
     let material_names = materials.iter().map(|(uuid, _)| {
         uuid.to_string()
@@ -38,29 +40,19 @@ pub async fn parse_interactive_read_subcommand(command: &str, session: &mut Sess
 }
 
 pub async fn parse_non_interactive_read_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let Some(item_type) = arg_matches.get_one::<String>("item_type") else {
-        return Err(Error::InvalidInput)
-    };
+    let item_type = arg_matches.get_one::<String>("item_type").ok_or(Error::InvalidInput)?;
 
-    let Some(id) = arg_matches.get_one::<String>("id") else {
-        return Err(Error::InvalidInput)
-    };
-    let Ok(id) = Uuid::parse_str(id) else {
-        return Err(Error::InvalidInput)
-    };
+    let id = arg_matches.get_one::<String>("id").ok_or(Error::InvalidInput)?;
+    let id = Uuid::parse_str(id)?;
     
     match &item_type[..] {
         "material" => {
-            let Some(material) = session.read::<Material>(&id) else {
-                return Err(Error::InvalidInput)
-            };
+            let material = session.read::<Material>(&id).ok_or(Error::InvalidInput)?;
             println!("{}", material);
             Ok(NonError::Continue)
         },
         "store" => {
-            let Some(store) = session.read::<Store>(&id) else {
-                return Err(Error::InvalidInput)
-            };
+            let store = session.read::<Store>(&id).ok_or(Error::InvalidInput)?;
             println!("{}", store);
             Ok(NonError::Continue)
         },

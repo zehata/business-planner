@@ -1,11 +1,10 @@
 use std::{collections::HashMap, fmt};
-
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::registry::{Registry, RegistryItem};
+use crate::{io::error::ReadError, registry::{Registry, RegistryItem, RegistryItemData, RegistryItemInternals, RegistryItemObject}};
 
-#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Debug, Default)]
+#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Debug, Default, Clone)]
 pub struct Material {
     name: Option<String>
 }
@@ -24,9 +23,22 @@ impl Material {
     }
 }
 
-impl RegistryItem for Material {
-    type Item = Material;
+impl RegistryItemData for Material {}
 
+impl RegistryItem for Material {
+    fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
+        registry.materials.iter().map(|(uuid, material)| {
+            (uuid, material.get_name())
+        }).collect()
+    }
+}
+
+impl RegistryItemObject for Material {
+    type RegistryItemData = Material;
+    type RegistryItem = Material;
+}
+
+impl RegistryItemInternals for Material {
     fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Material> {
         &registry.materials
     }
@@ -35,10 +47,9 @@ impl RegistryItem for Material {
         &mut registry.materials
     }
 
-    fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
-        registry.materials.iter().map(|(uuid, material)| {
-            (uuid, material.get_name())
-        }).collect()
+    fn fetch_data(&self) -> Result<Self, ReadError> {
+        // let data = HashMap::<String, Vec<Data>>::new();
+        Ok(self.clone())
     }
 }
 

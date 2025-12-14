@@ -19,18 +19,18 @@ pub async fn parse_interactive_run_plugins_subcommand(command: &str, session: &m
                         match &item_type[..] {
                             "material" => {
                                 let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
-                                data_request.send_response(material);
+                                data_request.send_response(material)?;
                             },
                             "store" => {
                                 let store = prompt_user_select_registry_item::<Store>(session, "Store id").await?;
-                                data_request.send_response(store);
+                                data_request.send_response(store)?;
                             },
                             _ => return Err(Error::InvalidInput),
                         };
                     },
                     PluginResponse::MaterialDataRequest(mut data_request) => {
                         let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
-                        data_request.send_response(material);
+                        data_request.send_response(material)?;
                     },
                     PluginResponse::Message(message) => {
                         println!("{message}");

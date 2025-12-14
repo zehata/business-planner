@@ -20,6 +20,7 @@ pub enum PluginError {
     ConversionToCStringErr(NulError),
     PluginDiscoveryError(PluginDiscoveryError),
     PluginMissingError,
+    IncompleteDataSource,
 }
 
 impl From<IoError> for PluginError {

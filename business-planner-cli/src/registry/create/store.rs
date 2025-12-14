@@ -73,18 +73,20 @@ pub async fn parse_create_store_non_interactive_subcommand(arg_matches: &ArgMatc
     if let Some(timestamp_data_source) = arg_matches.get_one::<String>("timestamps_source") {
         match &timestamp_data_source[..] {
             "excel" => {
-                if 
-                    let Some(timestamp_data_file) = arg_matches.get_one::<String>("timestamps_file") &&
-                    let Some(timestamp_data_range) = arg_matches.get_one::<String>("timestamps_file")
-                {
-                    let file_path = PathBuf::from_str(timestamp_data_file).unwrap();
-                    
-                    let excel_data_source = ExcelDataSource::new(file_path, timestamp_data_range);
-                    store.set_timestamps_range(DataSource::Excel(excel_data_source));
-                }
+                let timestamp_data_file = arg_matches.get_one::<String>("timestamps_file");
+                let file_path = timestamp_data_file.map(|file_path| PathBuf::from_str(file_path).unwrap());
+                
+                let timestamp_data_sheet = arg_matches.get_one::<String>("timestamps_sheet");
+                let sheet = timestamp_data_sheet.map(String::as_str);
+
+                let timestamp_data_range = arg_matches.get_one::<String>("timestamps_range");
+                let range = timestamp_data_range.map(String::as_str);
+
+                let excel_data_source = ExcelDataSource::new(file_path.as_ref(), sheet, range);
+                store.set_timestamps_range(Some(DataSource::Excel(excel_data_source)));
             },
             "csv" => {
-                unimplemented!();
+                todo!();
                 // if 
                 //     let Some(timestamp_data_file) = arg_matches.get_one::<String>("timestamps_range") &&
                 //     let Some(timestamp_data_query) = arg_matches.get_one::<String>("timestamps_range")
@@ -95,7 +97,7 @@ pub async fn parse_create_store_non_interactive_subcommand(arg_matches: &ArgMatc
             "psql" => {
                 if let Some(timestamp_data_query) = arg_matches.get_one::<String>("timestamps_query") {
                     let postgres_data_source = PostgresqlDataSource::new(timestamp_data_query);
-                    store.set_timestamps_range(DataSource::Postgres(postgres_data_source));
+                    store.set_timestamps_range(Some(DataSource::Postgres(postgres_data_source)));
                 }
             },
             _ => return Err(Error::InvalidInput)

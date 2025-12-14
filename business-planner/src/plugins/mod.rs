@@ -3,14 +3,16 @@ use std::fs::{self};
 use std::io::{BufRead, BufReader, Lines, Write};
 use std::path::{PathBuf, absolute};
 use std::process::{Child, ChildStdin, ChildStdout, Command, ExitStatus, Stdio};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use sonic_rs::{Serializer, json};
+use sonic_rs::{Deserializer, Serializer, json};
 
-use crate::api::registry::Material;
+use crate::api::registry::{Material, Store};
 use crate::error::Error;
+use crate::io::error::IoError;
 use crate::plugins::error::{PluginError, PluginDiscoveryError};
-use crate::registry::RegistryItem;
+use crate::registry::structs::store::StoreData;
+use crate::registry::{RegistryItem, RegistryItemInternals};
 
 pub mod error;
 
@@ -88,9 +90,7 @@ pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryE
             return Ok(())
         }
 
-        let Some(plugin_directory_name) = directory.file_name() else {
-            return Err(PluginDiscoveryError::ReadDirectoryError)
-        };
+        let plugin_directory_name = directory.file_name().ok_or(PluginDiscoveryError::ReadDirectoryError)?;
 
         let Ok(plugin_directory_name) = plugin_directory_name.to_os_string().into_string() else {
             return Err(PluginDiscoveryError::ReadDirectoryError)
@@ -115,9 +115,26 @@ pub struct AnyDataRequest<'a> {
     stdin: &'a mut ChildStdin,
 }
 
-impl<T: RegistryItem> DataRequest<T> for AnyDataRequest<'_> {
+impl DataRequest<Material> for AnyDataRequest<'_> {
     fn get_stdin(&mut self) -> &mut ChildStdin {
         self.stdin
+    }
+
+    fn format_message(&self, item: &Material) -> Result<Response, Error> {
+        Ok(Response::DataResponse(DataResponse::Material(item.clone())))
+    }
+}
+
+impl DataRequest<Store> for AnyDataRequest<'_> {
+    fn get_stdin(&mut self) -> &mut ChildStdin {
+        self.stdin
+    }
+
+    fn format_message(&self, item: &Store) -> Result<Response, Error> {
+        match item.fetch_data() {
+            Ok(store) => Ok(Response::DataResponse(DataResponse::Store(store))),
+            Err(error) => Err(Error::IoError(IoError::ReadError(error)))
+        }
     }
 }
 
@@ -129,15 +146,25 @@ impl DataRequest<Material> for MaterialDataRequest<'_> {
     fn get_stdin(&mut self) -> &mut ChildStdin {
         self.stdin
     }
+
+    fn format_message(&self, item: &Material) -> Result<Response, Error> {
+        match item.fetch_data() {
+            Ok(material) => Ok(Response::DataResponse(DataResponse::Material(material))),
+            Err(error) => Err(Error::IoError(IoError::ReadError(error)))
+        }
+    }
 }
 
 pub trait DataRequest<T: RegistryItem> {
     fn get_stdin(&mut self) -> &mut ChildStdin;
 
-    fn send_response(&mut self, item: &T) {
-        let mut ser = Serializer::new(Vec::new());
+    fn format_message(&self, item: &T) -> Result<Response, Error>;
 
-        let value = json!(item);
+    fn send_response(&mut self, item: &T) -> Result<(), Error> {
+        let message = self.format_message(item)?;
+
+        let value = json!(message);
+        let mut ser = Serializer::new(Vec::new());
         value.serialize(&mut ser).unwrap();
 
         let mut bytes = ser.into_inner();
@@ -145,6 +172,7 @@ pub trait DataRequest<T: RegistryItem> {
         
         let stdin = self.get_stdin();
         stdin.write_all(&bytes).unwrap();
+        Ok(())
     }
 }
 
@@ -154,6 +182,22 @@ pub enum PluginResponse<'a> {
     Message(String),
     Report(String),
     ProcessEnded,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DataResponse {
+    Material(Material),
+    Store(StoreData),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Response {
+    DataResponse(DataResponse),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Message {
+    DataRequest,
 }
 
 pub struct PluginResponses {
@@ -170,22 +214,18 @@ impl PluginResponses {
             Err(error) => return Some(Err(Error::PluginError(PluginError::IoError(error)))),
         };
 
-        Some(Ok(match &result[..] {
-            "request_data" => {
+        let mut deser = Deserializer::from_str(&result);
+        let Ok(message) = deser.deserialize() else {
+            return Some(Ok(PluginResponse::Message(result)))
+        };
+
+        let plugin_response = match message {
+            Message::DataRequest => {
                 PluginResponse::AnyDataRequest(AnyDataRequest { stdin: &mut self.stdin })
             },
-            "report" => {
-                let report = self.stdout.next()?;
+        };
 
-                let report = match report {
-                    Ok(report) => report,
-                    Err(error) => return Some(Err(Error::PluginError(PluginError::IoError(error)))),
-                };
-
-                PluginResponse::Report(report)
-            },
-            _ => PluginResponse::Message(result),
-        }))
+        Some(Ok(plugin_response))
     }
 }
 
@@ -219,9 +259,7 @@ impl PluginProcess {
 
 pub fn run_script (plugin: &Plugin) -> Result<PluginProcess, PluginError> {
     let absolute_path = absolute(plugin.path.clone())?;
-    let Some(parent) = absolute_path.parent() else {
-        return Err(PluginError::PluginMissingError)
-    };
+    let parent = absolute_path.parent().ok_or(PluginError::PluginMissingError)?;
     match plugin.plugin_type {
         PluginType::Python => {
             let mut command = Command::new("./.venv/bin/python");
@@ -236,16 +274,14 @@ pub fn run_script (plugin: &Plugin) -> Result<PluginProcess, PluginError> {
             Ok(plugin_process)
         },
         PluginType::Binary => {
-            unimplemented!()
+            todo!()
         },
     }
 }
 
 pub fn run_plugin (plugin_name: &str) -> Result<PluginProcess, Error> {
     let plugins = get_plugins()?;
-    let Some(plugin) = plugins.get(plugin_name) else {
-        return Err(Error::PluginDiscoveryError(PluginDiscoveryError::PluginNotFound))
-    };
+    let plugin = plugins.get(plugin_name).ok_or(Error::PluginDiscoveryError(PluginDiscoveryError::PluginNotFound))?;
     Ok(run_script(plugin)?)
 }
 

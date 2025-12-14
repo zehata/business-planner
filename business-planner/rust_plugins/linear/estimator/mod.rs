@@ -40,21 +40,15 @@ impl Model for LinearRegression {
 
         let usage_data_by_axes = transpose_usage_data(usage_data)?;
 
-        let Some(len_x) = bigdecimal::BigDecimal::from_usize(usage_data_by_axes.amounts.len()) else {
-            return Err(PredictorEstimationError::NoUsageData("No usage data found".to_string()))
-        };
+        let len_x = bigdecimal::BigDecimal::from_usize(usage_data_by_axes.amounts.len()).ok_or(PredictorEstimationError::NoUsageData("No usage data found".to_string()))?;
+        let len_y = bigdecimal::BigDecimal::from_usize(usage_data_by_axes.timestamps.len()).ok_or(PredictorEstimationError::NoUsageData("No usage data found".to_string()));
 
-        let Some(len_y) = bigdecimal::BigDecimal::from_usize(usage_data_by_axes.timestamps.len()) else {
-            return Err(PredictorEstimationError::NoUsageData("No usage data found".to_string()))
-        };
         let mean_y = usage_data_by_axes.amounts.iter().sum::<BigDecimal>() / len_x;
         let mean_x = usage_data_by_axes.timestamps.iter().sum::<BigDecimal>() / len_y;
         let errors_x = usage_data_by_axes.amounts.iter().map(|x| { x - &mean_x}).collect::<Vec<BigDecimal>>();
         let errors_y = usage_data_by_axes.amounts.iter().map(|y| { y - &mean_x}).collect::<Vec<BigDecimal>>();
         
-        let Some(zero) = BigDecimal::from_i32(0) else {
-            return Err(PredictorEstimationError::BigDecimalCreationError("Failed to create a BigDecimal of value 0".to_string()))
-        };
+        let zero = BigDecimal::from_i32(0).ok_or(PredictorEstimationError::BigDecimalCreationError("Failed to create a BigDecimal of value 0".to_string()))?;
 
         let nominator = errors_x.iter().zip(errors_y).fold(
             zero.clone(),

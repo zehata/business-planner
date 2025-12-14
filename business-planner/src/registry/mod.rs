@@ -1,9 +1,10 @@
 use std::{collections::HashMap};
 
+use polars::series::Series;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::registry::structs::{material::Material, store::Store};
+use crate::{api::registry::Store, io::error::ReadError, registry::structs::material::Material};
 
 pub mod structs;
 
@@ -13,32 +14,27 @@ pub struct Registry {
     stores: HashMap<Uuid, Store>,
 }
 
-pub trait RegistryItem: Serialize + Default {
-    type Item;
-
-    fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Self::Item>;
-
-    fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self::Item>;
-
-    fn create(registry: &mut Registry, item: Self::Item) -> Uuid {
+#[allow(private_bounds)]
+pub trait RegistryItem: RegistryItemInternals {
+    fn create(registry: &mut Registry, item: Self::RegistryItem) -> Uuid {
         let uuid = Uuid::new_v4();
         Self::get_item_registry_mut(registry).insert(uuid, item);
         uuid
     }
 
-    fn read<'a>(id: &Uuid, registry: &'a Registry) -> Option<&'a Self::Item> {
+    fn read<'a>(id: &Uuid, registry: &'a Registry) -> Option<&'a Self::RegistryItem> {
         Self::get_item_registry(registry).get(id)
     }
 
-    fn get<'a>(id: &Uuid, registry: &'a mut Registry) -> Option<&'a mut Self::Item> {
+    fn get<'a>(id: &Uuid, registry: &'a mut Registry) -> Option<&'a mut Self::RegistryItem> {
         Self::get_item_registry_mut(registry).get_mut(id)
     }
 
-    fn update(id: &Uuid, registry: &mut Registry, item: Self::Item) {
+    fn update(id: &Uuid, registry: &mut Registry, item: Self::RegistryItem) {
         Self::get_item_registry_mut(registry).insert(*id, item);
     }
 
-    fn delete(id: &Uuid, registry: &mut Registry) -> Option<Self::Item>{
+    fn delete(id: &Uuid, registry: &mut Registry) -> Option<Self::RegistryItem>{
         Self::get_item_registry_mut(registry).remove(id)
     }
 
@@ -51,34 +47,59 @@ pub trait RegistryItem: Serialize + Default {
     fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)>;
 }
 
+pub trait RegistryItemObject: Serialize + Default {
+    type RegistryItem;
+    type RegistryItemData;
+}
+
+pub(crate) trait RegistryItemInternals: RegistryItemObject {
+    fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Self::RegistryItem>;
+
+    fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self::RegistryItem>;
+
+    fn fetch_data(&self) -> Result<Self::RegistryItemData, ReadError>;
+}
+
 impl Registry {
     pub fn create<T>(&mut self, item: T) -> Uuid
-    where T: RegistryItem<Item = T> {
+        where
+            T: RegistryItem<RegistryItem = T> {
         T::create(self, item)
     }
 
-    pub fn read<T>(&self, id: &Uuid) -> Option<&T> where T: RegistryItem<Item = T> {
+    pub fn read<T>(&self, id: &Uuid) -> Option<&T> where T: RegistryItem<RegistryItem = T> {
         T::read(id, self)
     }
 
-    pub fn get<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+    pub fn get<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<RegistryItem = T> {
         T::get(id, self)
     }
 
     pub fn update<T>(&mut self, id: &Uuid, item: T)
-    where T: RegistryItem<Item = T> {
+    where T: RegistryItem<RegistryItem = T> {
         T::update(id, self, item)
     }
 
-    pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<Item = T> {
+    pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<RegistryItem = T> {
         T::delete(id, self);
     }
 
-    pub fn list<T>(&self) -> Vec<String> where T: RegistryItem<Item = T> {
+    pub fn list<T>(&self) -> Vec<String> where T: RegistryItem<RegistryItem = T> {
         T::list(self)
     }
 
-    pub fn list_names<T>(&self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
+    pub fn list_names<T>(&self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<RegistryItem = T> {
         T::list_names(self)
     }
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub enum Data {
+    Int64(i64),
+    Float64(f64),
+    String(String),
+    Boolean(bool),
+    Null,
+}
+
+pub trait RegistryItemData: Serialize {}

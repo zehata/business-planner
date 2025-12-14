@@ -1,4 +1,6 @@
-use business_planner::api::session::{Session, create_session};
+use std::path::PathBuf;
+
+use business_planner::api::session::{Session, create_session, load_session};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 pub mod error;
@@ -6,6 +8,7 @@ pub mod shells;
 pub mod registry;
 pub mod save;
 pub mod plugins;
+pub mod utils;
 
 pub use error::{NonError, Error};
 
@@ -22,7 +25,12 @@ fn entry_cli() -> Command {
         )
         .subcommands([
             Command::new("create"),
-            Command::new("load"),
+            Command::new("load")
+                .arg(
+                    Arg::new("path")
+                        .required(true)
+                        .value_parser(clap::value_parser!(PathBuf))
+                ),
         ])
 }
 
@@ -30,14 +38,12 @@ fn entry_cli() -> Command {
 async fn main () {
     let matches = entry_cli().get_matches();
     let mut session = match matches.subcommand() {
-        Some(("create", _)) => {
-            create_session()
-        },
-        Some(("load", _)) => {
-            unimplemented!()
+        Some(("load", arg_matches)) => {
+            let path = arg_matches.get_one::<PathBuf>("path").expect("Clap to have filtered off missing path argument");
+            load_session(path).unwrap()
         },
         _ => {
-            unimplemented!()
+            create_session()
         }
     };
     let interactive = matches.get_one::<bool>("interactive").unwrap_or(&false);
@@ -61,6 +67,7 @@ async fn main () {
         match result {
             Ok(NonError::Exit) => { user_requested_exit = true; },
             Ok(NonError::Continue) => {},
+            Err(Error::UserCancelled) => {},
             Err(error) => println!("{:?}", error),
         };
     }

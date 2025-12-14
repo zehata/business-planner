@@ -1,9 +1,10 @@
 use std::{fmt, string::FromUtf8Error};
 
-use crate::{api::session::{LoadSessionError, SaveSessionError}, plugins::error::{PluginDiscoveryError, PluginError}};
+use crate::{api::session::{LoadSessionError, SaveSessionError}, io::error::IoError, plugins::error::{PluginDiscoveryError, PluginError}};
 
 #[derive(Debug)]
 pub enum Error {
+    IoError(IoError),
     PluginDiscoveryError(PluginDiscoveryError),
     PluginError(PluginError),
     FromUtf8Error(FromUtf8Error),
@@ -21,6 +22,12 @@ impl fmt::Display for Error {
             _ => dbg!(self).to_string()
         };
         write!(f, "{message}")
+    }
+}
+
+impl From<IoError> for Error {
+    fn from(value: IoError) -> Self {
+        Error::IoError(value)
     }
 }
 

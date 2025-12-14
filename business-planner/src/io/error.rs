@@ -1,27 +1,37 @@
+#[cfg(feature = "csv")]
+use csv::{Error as CsvError};
+#[cfg(feature = "postgres")]
+use sqlx::{Error as SqlxError};
+use crate::io::excel::error::ExcelError;
+
+#[derive(Debug)]
+pub enum IoError {
+    ReadError(ReadError),
+    WriteError,
+}
+
+impl From<ReadError> for IoError {
+    fn from(value: ReadError) -> Self {
+        IoError::ReadError(value)
+    }
+}
+
 #[derive(Debug)]
 pub enum ReadError {
     #[cfg(feature = "csv")]
     CsvError(CsvError),
-    #[cfg(feature = "excel")]
-    XlsxError(XlsxError),
+    ExcelError(ExcelError),
     #[cfg(feature = "postgres")]
     SqlxError(SqlxError),
     NoRow,
     NoCell,
 }
 
-#[cfg(feature = "excel")]
-use umya_spreadsheet::XlsxError;
-
-#[cfg(feature = "excel")]
-impl From<XlsxError> for ReadError {
-    fn from(value: XlsxError) -> Self {
-        ReadError::XlsxError(value)
+impl From<ExcelError> for ReadError {
+    fn from(value: ExcelError) -> Self {
+        ReadError::ExcelError(value)
     }
 }
-
-#[cfg(feature = "csv")]
-use csv::{Error as CsvError};
 
 #[cfg(feature = "csv")]
 impl From<CsvError> for ReadError {
@@ -29,9 +39,6 @@ impl From<CsvError> for ReadError {
         ReadError::CsvError(value)
     }
 }
-
-#[cfg(feature = "postgres")]
-use sqlx::{Error as SqlxError};
 
 #[cfg(feature = "postgres")]
 impl From<SqlxError> for ReadError {

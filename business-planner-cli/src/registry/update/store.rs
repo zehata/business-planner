@@ -2,10 +2,10 @@ use std::{path::PathBuf, str::FromStr};
 
 use business_planner::api::{registry::{DataSource, ExcelDataSource, PostgresqlDataSource, Store}, session::Session};
 use clap::{Arg, ArgMatches, Command};
-use inquire::Text;
+use inquire::{InquireError, Select, Text};
 use uuid::Uuid;
 
-use crate::{Error, NonError};
+use crate::{Error, NonError, utils};
 
 pub fn get_update_store_subcommand() -> Command {
     Command::new("store")
@@ -30,6 +30,18 @@ pub fn get_update_store_subcommand() -> Command {
                     ("timestamps_source", "excel"),
                     ("timestamps_source", "csv"),
                 ])
+                .requires("timestamps_sheet")
+                .requires("timestamps_range")
+                .conflicts_with("timestamps_query")
+        )
+        .arg(
+            Arg::new("timestamps_sheet")
+                .long("timestamps_sheet")
+                .required_if_eq_any([
+                    ("timestamps_source", "excel"),
+                    ("timestamps_source", "csv"),
+                ])
+                .requires("timestamps_file")
                 .requires("timestamps_range")
                 .conflicts_with("timestamps_query")
         )
@@ -41,13 +53,14 @@ pub fn get_update_store_subcommand() -> Command {
                     ("timestamps_source", "csv"),
                 ])
                 .requires("timestamps_file")
+                .requires("timestamps_sheet")
                 .conflicts_with("timestamps_query")
         )
         .arg(    
             Arg::new("timestamps_query")
                 .long("timestamps_query")
                 .required_if_eq("timestamps_source", "psql")
-                .conflicts_with_all(["timestamps_file", "timestamps_range"])
+                .conflicts_with_all(["timestamps_file", "timestamps_sheet", "timestamps_range"])
         )
 }
 
@@ -66,10 +79,34 @@ pub fn get_update_store_interactive_subcommand(session: &mut Session) -> Vec<Str
     session.list::<Store>()
 }
 
+pub async fn prompt_populate_excel_data_source(excel_data_source: &mut ExcelDataSource) -> Result<(), Error> {
+    let mut user_ok = false;
+    while !user_ok {
+        match Select::new("", vec!["File path", "Sheet", "Range", "Ok"]).prompt()? {
+            "File path" => {
+                match utils::select_file().await {
+                    Ok(path) => excel_data_source.set_file_path(Some(&path)),
+                    Err(Error::InquireError(InquireError::OperationCanceled)) => continue,
+                    Err(error) => return Err(error),
+                }
+            },
+            "Sheet" => {
+                excel_data_source.set_sheet(Text::new("Sheet").prompt_skippable()?.as_deref());
+            },
+            "Range" => {
+                excel_data_source.set_range(Text::new("Range").prompt_skippable()?.as_deref());
+            },
+            "Ok" => {
+                user_ok = true
+            }
+            _ => return Err(Error::InvalidInput)
+        }
+    }
+    Ok(())
+}
+
 pub async fn parse_update_store_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let Some(store) = session.get::<Store>(&Uuid::parse_str(command)?) else {
-        return Err(Error::InvalidInput)
-    };
+    let store = session.get::<Store>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
 
     let unchanged_name_hint = match store.get_name() {
         Some(name) => &format!("({})", name),
@@ -82,13 +119,33 @@ pub async fn parse_update_store_interactive_subcommand(command: &str, session: &
         store.set_name(&name);
     }
 
+    match Select::new("Timestamps data source", vec!["(Unchanged)", "Excel", "CSV", "PostgreSQL"]).prompt_skippable()? {
+        Some("Excel") => {
+            match store.get_timestamps_range_mut() {
+                Some(DataSource::Excel(excel_data_source)) => {
+                    prompt_populate_excel_data_source(excel_data_source).await?;
+                },
+                _ => {
+                    let mut excel_data_source = ExcelDataSource::new(None, None, None);
+                    prompt_populate_excel_data_source(&mut excel_data_source).await?;
+                    store.set_timestamps_range(Some(DataSource::Excel(excel_data_source)));
+                }
+            }
+        },
+        Some("CSV") => {
+            todo!()
+        },
+        Some("PostgreSQL") => {
+            todo!()
+        },
+        _ => return Err(Error::InvalidInput),
+    }
+
     Ok(NonError::Continue)
 }
 
 pub async fn parse_update_store_non_interactive_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let Some(store) = select_store(session, arg_matches) else {
-        return Err(Error::InvalidInput)
-    };
+    let store = select_store(session, arg_matches).ok_or(Error::InvalidInput)?;
 
     if let Some(name) = arg_matches.get_one::<String>("name") {
         store.set_name(name);
@@ -97,18 +154,37 @@ pub async fn parse_update_store_non_interactive_subcommand(arg_matches: &ArgMatc
     if let Some(timestamp_data_source) = arg_matches.get_one::<String>("timestamps_source") {
         match &timestamp_data_source[..] {
             "excel" => {
-                if 
-                    let Some(timestamp_data_file) = arg_matches.get_one::<String>("timestamps_file") &&
-                    let Some(timestamp_data_range) = arg_matches.get_one::<String>("timestamps_file")
-                {
-                    let file_path = PathBuf::from_str(timestamp_data_file).unwrap();
-                    
-                    let excel_data_source = ExcelDataSource::new(file_path, timestamp_data_range);
-                    store.set_timestamps_range(DataSource::Excel(excel_data_source));
+                let data_source = store.get_timestamps_range_mut();
+                
+                let timestamp_data_file = arg_matches.get_one::<String>("timestamps_file");
+                let file_path = timestamp_data_file.map(|file_path| PathBuf::from_str(file_path).unwrap());
+                
+                let timestamp_data_sheet = arg_matches.get_one::<String>("timestamps_sheet");
+                let sheet = timestamp_data_sheet.map(String::as_str);
+
+                let timestamp_data_range = arg_matches.get_one::<String>("timestamps_range");
+                let range = timestamp_data_range.map(String::as_str);
+
+                match data_source {
+                    Some(DataSource::Excel(excel_data_source)) => {
+                        if let Some(file_path) = file_path {
+                            excel_data_source.set_file_path(Some(&file_path));
+                        }
+                        if let Some(sheet) = sheet {
+                            excel_data_source.set_sheet(Some(sheet));
+                        }
+                        if let Some(range) = range {
+                            excel_data_source.set_range(Some(range));
+                        }
+                    },
+                    _ => {
+                        let excel_data_source = ExcelDataSource::new(file_path.as_ref(), sheet, range);
+                        store.set_timestamps_range(Some(DataSource::Excel(excel_data_source)));
+                    }
                 }
             },
             "csv" => {
-                unimplemented!();
+                todo!();
                 // if 
                 //     let Some(timestamp_data_file) = arg_matches.get_one::<String>("timestamps_range") &&
                 //     let Some(timestamp_data_query) = arg_matches.get_one::<String>("timestamps_range")
@@ -119,7 +195,7 @@ pub async fn parse_update_store_non_interactive_subcommand(arg_matches: &ArgMatc
             "psql" => {
                 if let Some(timestamp_data_query) = arg_matches.get_one::<String>("timestamps_query") {
                     let postgres_data_source = PostgresqlDataSource::new(timestamp_data_query);
-                    store.set_timestamps_range(DataSource::Postgres(postgres_data_source));
+                    store.set_timestamps_range(Some(DataSource::Postgres(postgres_data_source)));
                 }
             },
             _ => return Err(Error::InvalidInput)

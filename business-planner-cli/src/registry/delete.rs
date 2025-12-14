@@ -5,8 +5,8 @@ use uuid::Uuid;
 
 use crate::{Error, NonError, registry::{TakesRegistryItemId, retrying_prompt_uuid}};
 
-pub fn get_read_subcommand() -> Command {
-    Command::new("read")
+pub fn get_delete_subcommand() -> Command {
+    Command::new("delete")
         .no_binary_name(true)
         .takes_registry_item_id_arg()
 }
@@ -28,16 +28,10 @@ pub async fn parse_interactive_delete_subcommand(command: &str, session: &mut Se
 }
 
 pub async fn parse_non_interactive_delete_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let Some(item_type) = arg_matches.get_one::<String>("item_type") else {
-        return Err(Error::InvalidInput)
-    };
+    let item_type = arg_matches.get_one::<String>("item_type").ok_or(Error::InvalidInput)?;
 
-    let Some(id) = arg_matches.get_one::<String>("id") else {
-        return Err(Error::InvalidInput)
-    };
-    let Ok(id) = Uuid::parse_str(id) else {
-        return Err(Error::InvalidInput)
-    };
+    let id = arg_matches.get_one::<String>("id").ok_or(Error::InvalidInput)?;
+    let id = Uuid::parse_str(id)?;
     
     match &item_type[..] {
         "material" => {

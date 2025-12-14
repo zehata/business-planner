@@ -5,7 +5,7 @@ use clap::{Arg, ArgMatches, Command};
 use inquire::Text;
 use uuid::Uuid;
 
-use crate::{Error, NonError, registry::{create::{get_create_subcommand, parse_interactive_create_subcommand, parse_non_interactive_create_subcommand}, read::{get_read_subcommand, parse_interactive_read_subcommand, parse_non_interactive_read_subcommand}}, shells::interactive};
+use crate::{Error, NonError, registry::{create::{get_create_subcommand, parse_interactive_create_subcommand, parse_non_interactive_create_subcommand}, delete::{get_delete_subcommand, parse_interactive_delete_subcommand}, read::{get_read_subcommand, parse_interactive_read_subcommand, parse_non_interactive_read_subcommand}, update::{get_update_subcommand, parse_interactive_update_subcommand}}, shells::interactive};
 
 pub mod create;
 pub mod read;
@@ -20,6 +20,8 @@ pub fn get_registry_subcommand() -> Command {
         .subcommands([
             get_create_subcommand(),
             get_read_subcommand(),
+            get_update_subcommand(),
+            get_delete_subcommand(),
         ])
 }
 
@@ -36,6 +38,20 @@ pub async fn parse_interactive_registry_subcommand(command: &str, session: &mut 
             interactive::shell(
                 get_registry_item_types(),
                 parse_interactive_read_subcommand,
+                session,
+            ).await
+        },
+        "update" => {
+            interactive::shell(
+                get_registry_item_types(),
+                parse_interactive_update_subcommand,
+                session,
+            ).await
+        },
+        "delete" => {
+            interactive::shell(
+                get_registry_item_types(),
+                parse_interactive_delete_subcommand,
                 session,
             ).await
         },

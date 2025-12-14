@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, io::Error as IoError};
 
 use business_planner::api::error::BusinessPlannerError;
 pub use clap::Error as ClapError;
@@ -10,7 +10,9 @@ pub enum NonError {
     Exit,
 }
 
+#[derive(Debug)]
 pub enum Error {
+    IoError(IoError),
     InvalidInput,
     UserCancelled,
     BusinessPlannerError(BusinessPlannerError),
@@ -20,9 +22,10 @@ pub enum Error {
     ErroneousShlexInput,
 }
 
-impl fmt::Debug for Error {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Error::IoError(error) => write!(f, "{}", error),
             Error::InvalidInput => write!(f, "Input is invalid"),
             Error::UserCancelled => write!(f, "Cancelled"),
             Error::BusinessPlannerError(business_planner_error) => write!(f, "{}", business_planner_error),
@@ -31,6 +34,12 @@ impl fmt::Debug for Error {
             Error::UuidError(uuid_error) => write!(f, "{uuid_error}"),
             Error::ErroneousShlexInput => write!(f, "Erroneous input provided to command splitter"),
         }
+    }
+}
+
+impl From<IoError> for Error {
+    fn from(value: IoError) -> Self {
+        Error::IoError(value)
     }
 }
 

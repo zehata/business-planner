@@ -1,6 +1,7 @@
-use std::{fs, path::{self, Path, PathBuf}};
+use std::{fs::File, path::{self, Path, PathBuf}};
 
 use crate::{registry::{Registry, RegistryItem}, session::error::{LoadSessionError, SaveSessionError}};
+use ciborium::{cbor, from_reader, into_writer};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -28,33 +29,32 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn create<T>(&mut self, item: T) -> Uuid
-    where T: RegistryItem<Item = T> {
+    pub fn create<T>(&mut self, item: T) -> Uuid where T: RegistryItem<RegistryItem = T> {
         self.data.registry.create::<T>(item)
     }
 
-    pub fn read<T>(&self, id: &Uuid) -> Option<&T> where T: RegistryItem<Item = T> {
+    pub fn read<T>(&self, id: &Uuid) -> Option<&T> where T: RegistryItem<RegistryItem = T> {
         self.data.registry.read::<T>(id)
     }
 
-    pub fn get<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<Item = T> {
+    pub fn get<T>(&mut self, id: &Uuid) -> Option<&mut T> where T: RegistryItem<RegistryItem = T> {
         self.data.registry.get::<T>(id)
     }
 
     pub fn update<T>(&mut self, id: &Uuid, item: T)
-    where T: RegistryItem<Item = T> {
+    where T: RegistryItem<RegistryItem = T> {
         self.data.registry.update::<T>(id, item)
     }
 
-    pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<Item = T> {
+    pub fn delete<T>(&mut self, id: &Uuid) where T: RegistryItem<RegistryItem = T> {
         self.data.registry.delete::<T>(id);
     }
 
-    pub fn list<T>(&self) -> Vec<String> where T: RegistryItem<Item = T> {
+    pub fn list<T>(&self) -> Vec<String> where T: RegistryItem<RegistryItem = T> {
         self.data.registry.list::<T>()
     }
 
-    pub fn list_names<T>(&self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<Item = T> {
+    pub fn list_names<T>(&self) -> Vec<(&Uuid, Option<&str>)> where T: RegistryItem<RegistryItem = T> {
         self.data.registry.list_names::<T>()
     }
 }
@@ -64,8 +64,8 @@ pub fn create_session() -> Session {
 }
 
 pub fn load_session(path: &PathBuf) -> Result<Session, LoadSessionError> {
-    let serialized_session_data = fs::read_to_string(path)?;
-    let session_data = serde_xml_rs::from_str(&serialized_session_data)?;
+    let file = File::open(path)?;
+    let session_data = from_reader(file)?; 
     let path = path::absolute(path).ok();
     Ok(Session {
         last_save_location: path,
@@ -81,12 +81,13 @@ pub fn save_to_last_save_location(session: &Session, overwrite: bool) -> Result<
 }
 
 pub fn save_to_location(session: &Session, path: &Path, overwrite: bool) -> Result<(), SaveSessionError> {
-    let serialized: String = serde_xml_rs::to_string(&session.data)?;
     if path.exists() && !overwrite {
         return Err(SaveSessionError::FileExists)
     }
 
-    fs::write(path, serialized)?;
+    let cbor_value = cbor!(session.data)?;
+    let file = File::create(path)?;
+    into_writer(&cbor_value, file)?;
     
     Ok(())
 }

@@ -3,12 +3,42 @@ use std::{collections::HashMap, fmt::{self, Display}, path::PathBuf};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::registry::{Registry, RegistryItem};
+use crate::{io::{error::ReadError, excel::{create_vec_from_cells, read_once}}, registry::{Data, Registry, RegistryItem, RegistryItemInternals, RegistryItemObject}};
+
+// #[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
+// pub struct Store {
+//     data: StoreData,
+//     data_source: StoreDataSources,
+// }
+
+// impl Store {
+//     fn new(data: StoreData, data_source: StoreDataSources) -> Store {
+//         Store {
+//             data,
+//             data_source,
+//         }
+//     }
+// }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
+pub struct StoreData {
+    timestamps: Vec<Data>,
+    // stock_levels: Vec<Data>,
+}
+
+impl StoreData {
+    fn new(timestamps: Vec<Data>) -> StoreData {
+        StoreData {
+            timestamps,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct Store {
     name: Option<String>,
     timestamps: Option<DataSource>,
+    // stock_levels: Option<DataSource>,
 }
 
 impl Store {
@@ -32,26 +62,61 @@ impl Store {
         self.timestamps.as_mut()
     }
 
-    pub fn set_timestamps_range(&mut self, data_source: DataSource) {
-        self.timestamps = Some(data_source);
+    pub fn set_timestamps_range(&mut self, data_source: Option<DataSource>) {
+        self.timestamps = data_source;
     }
 }
 
 impl RegistryItem for Store {
-    type Item = Store;
-
-    fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Store> {
-        &registry.stores
-    }
-    
-    fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self::Item> {
-        &mut registry.stores
-    }
-
     fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
         registry.stores.iter().map(|(uuid, store)| {
             (uuid, store.get_name())
         }).collect()
+    }
+}
+
+impl RegistryItemObject for Store {
+    type RegistryItemData = StoreData;
+    type RegistryItem = Store;
+}
+
+impl RegistryItemInternals for Store {
+    fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Self::RegistryItem> {
+        &registry.stores
+    }
+    
+    fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self::RegistryItem> {
+        &mut registry.stores
+    }
+
+    fn fetch_data(&self) -> Result<StoreData, ReadError> {
+        let timestamps = match &self.timestamps {
+            Some(DataSource::Excel(excel_data_source)) => {
+                let path = excel_data_source.get_file_path();
+                let sheet = excel_data_source.get_sheet();
+                let range = excel_data_source.get_range();
+
+                match (path, sheet, range) {
+                    (Some(path), Some(sheet), Some(range)) => {
+                        let range = read_once(
+                            path,
+                            sheet,
+                            range,
+                        )?;
+                        
+                        create_vec_from_cells(range.cells())?
+                    },
+                    _ => {
+                        vec![]
+                    }
+                }
+            },
+            Some(_) => todo!(),
+            None => vec![],
+        };
+
+        let data = StoreData::new(timestamps);
+        Ok(data)
     }
 }
 
@@ -64,21 +129,23 @@ impl Display for Store {
             },
             None => "",
         };
-        write!(f, "Store\nName: {}\nTimestamps:\n{}", name, timestamps_range)
+        write!(f, "Name: {}\nTimestamps:\n{}", name, timestamps_range)
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct ExcelDataSource {
     file_path: Option<PathBuf>,
+    sheet: Option<String>,
     range: Option<String>,
 }
 
 impl ExcelDataSource {
-    pub fn new(file_path: PathBuf, range: &str) -> ExcelDataSource {
+    pub fn new(file_path: Option<&PathBuf>, sheet: Option<&str>, range: Option<&str>) -> ExcelDataSource {
         ExcelDataSource {
-            file_path: Some(file_path),
-            range: Some(range.to_string()),
+            file_path: file_path.cloned(),
+            sheet: sheet.map(str::to_string),
+            range: range.map(str::to_string),
         }
     }
 
@@ -86,8 +153,24 @@ impl ExcelDataSource {
         self.file_path.as_ref()
     }
 
-    pub fn set_file_path (&mut self, file_path: &PathBuf) {
-        self.file_path = Some(file_path.to_owned())
+    pub fn set_file_path (&mut self, file_path: Option<&PathBuf>) {
+        self.file_path = file_path.cloned()
+    }
+
+    pub fn get_sheet (&self) -> Option<&str> {
+        self.sheet.as_deref()
+    }
+
+    pub fn set_sheet (&mut self, sheet: Option<&str>) {
+        self.sheet = sheet.map(str::to_string)
+    }
+
+    pub fn get_range (&self) -> Option<&str> {
+        self.range.as_deref()
+    }
+
+    pub fn set_range (&mut self, range: Option<&str>) {
+        self.range = range.map(str::to_string)
     }
 }
 
@@ -97,11 +180,13 @@ impl Display for ExcelDataSource {
             Some(file_path) => file_path.to_str().unwrap_or(""),
             None => "",
         };
-        writeln!(f, "Excel Data Source\nFile path: {}", file_path)
+        let sheet = self.get_sheet().unwrap_or("");
+        let range = self.get_range().unwrap_or("");
+        writeln!(f, "Excel Data Source\nFile path: {}\nSheet: {}\nRange: {}", file_path, sheet, range)
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct PostgresqlDataSource {
     query: Option<String>
 }
@@ -128,7 +213,7 @@ impl Display for PostgresqlDataSource {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub enum DataSource {
     Csv,
     Excel(ExcelDataSource),
