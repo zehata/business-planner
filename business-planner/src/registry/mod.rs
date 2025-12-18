@@ -1,6 +1,5 @@
 use std::{collections::HashMap};
 
-use polars::series::Series;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -49,7 +48,7 @@ pub trait RegistryItem: RegistryItemInternals {
 
 pub trait RegistryItemObject: Serialize + Default {
     type RegistryItem;
-    type RegistryItemData;
+    type RegistryItemData: RegistryItemData;
 }
 
 pub(crate) trait RegistryItemInternals: RegistryItemObject {

@@ -1,3 +1,1 @@
-mod select_file;
-
-pub use select_file::select_file;
+pub mod prompt_select_path;

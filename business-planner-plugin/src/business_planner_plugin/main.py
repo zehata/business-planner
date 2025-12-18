@@ -13,6 +13,8 @@ def parse_data(value):
         for data_type, member in value.items():
             return member
 
+    raise ValueError("Missing data in response")
+
 
 def send_message(message: dict):
     serialized = json.dumps(message)

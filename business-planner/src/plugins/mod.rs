@@ -3,6 +3,8 @@ use std::fs::{self};
 use std::io::{BufRead, BufReader, Lines, Write};
 use std::path::{PathBuf, absolute};
 use std::process::{Child, ChildStdin, ChildStdout, Command, ExitStatus, Stdio};
+use std::str::FromStr;
+use copy_dir::copy_dir;
 use serde::{Deserialize, Serialize};
 
 use sonic_rs::{Deserializer, Serializer, json};
@@ -10,19 +12,19 @@ use sonic_rs::{Deserializer, Serializer, json};
 use crate::api::registry::{Material, Store};
 use crate::error::Error;
 use crate::io::error::IoError;
-use crate::plugins::error::{PluginError, PluginDiscoveryError};
+use crate::plugins::error::{PluginError, PluginManagementError};
 use crate::registry::structs::store::StoreData;
 use crate::registry::{RegistryItem, RegistryItemInternals};
 
 pub mod error;
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq)]
 enum PluginType {
     Python,
     Binary,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq)]
 pub struct Plugin {
     path: PathBuf,
     plugin_type: PluginType,
@@ -33,7 +35,7 @@ pub enum DirectoryEntriesFilter {
     Directory,
 }
 
-fn list_directory_contents (path: &PathBuf, filter: Option<DirectoryEntriesFilter>) -> Result<Vec<PathBuf>, error::PluginDiscoveryError> {
+fn list_directory_contents (path: &PathBuf, filter: Option<DirectoryEntriesFilter>) -> Result<Vec<PathBuf>, error::PluginManagementError> {
     let directory_entries = fs::read_dir(path)?;
     Ok(directory_entries.filter_map(|dir_entry| {
         let path = match dir_entry {
@@ -67,7 +69,12 @@ fn list_directory_contents (path: &PathBuf, filter: Option<DirectoryEntriesFilte
 
 static REQUIRED_FILES: [&str; 1] = ["main"];
 
-pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryError> {
+pub fn list_plugins () -> Result<Vec<String>, error::PluginManagementError> {
+    let plugins = get_plugins()?;
+    Ok(plugins.keys().cloned().collect())
+}
+
+pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginManagementError> {
     let current_directory = PathBuf::from("./plugins/");
     let directory_contents = list_directory_contents(&current_directory, Some(DirectoryEntriesFilter::Directory))?;
 
@@ -75,7 +82,7 @@ pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryE
     
     directory_contents.into_iter().try_for_each(|directory| {
         let Ok(files) = list_directory_contents(&directory, Some(DirectoryEntriesFilter::File)) else {
-            return Err(PluginDiscoveryError::ReadDirectoryError)
+            return Err(PluginManagementError::ReadDirectoryError)
         };
 
         let file_names = files.iter().filter_map(|file| {
@@ -90,18 +97,14 @@ pub fn get_plugins () -> Result<HashMap<String, Plugin>, error::PluginDiscoveryE
             return Ok(())
         }
 
-        let plugin_directory_name = directory.file_name().ok_or(PluginDiscoveryError::ReadDirectoryError)?;
+        let plugin_directory_name = directory.file_name().ok_or(PluginManagementError::ReadDirectoryError)?;
 
         let Ok(plugin_directory_name) = plugin_directory_name.to_os_string().into_string() else {
-            return Err(PluginDiscoveryError::ReadDirectoryError)
+            return Err(PluginManagementError::ReadDirectoryError)
         };
 
         plugins.insert(plugin_directory_name, Plugin{
-            path: {
-                let mut script_path = directory;
-                script_path.push("main.py");
-                script_path
-            },
+            path: directory,
             plugin_type: PluginType::Python,
         });
 
@@ -259,12 +262,12 @@ impl PluginProcess {
 
 pub fn run_script (plugin: &Plugin) -> Result<PluginProcess, PluginError> {
     let absolute_path = absolute(plugin.path.clone())?;
-    let parent = absolute_path.parent().ok_or(PluginError::PluginMissingError)?;
+    // let parent = absolute_path.parent().ok_or(PluginError::PluginMissingError)?;
     match plugin.plugin_type {
         PluginType::Python => {
             let mut command = Command::new("./.venv/bin/python");
-            command.current_dir(parent);
-            command.args([absolute_path]);
+            command.current_dir(absolute_path);
+            command.args(["main.py"]);
             command.stdin(Stdio::piped());
             command.stdout(Stdio::piped());
 
@@ -279,10 +282,29 @@ pub fn run_script (plugin: &Plugin) -> Result<PluginProcess, PluginError> {
     }
 }
 
-pub fn run_plugin (plugin_name: &str) -> Result<PluginProcess, Error> {
-    let plugins = get_plugins()?;
-    let plugin = plugins.get(plugin_name).ok_or(Error::PluginDiscoveryError(PluginDiscoveryError::PluginNotFound))?;
-    Ok(run_script(plugin)?)
+pub fn get_plugin(plugin_name: &str) -> Result<Plugin, PluginManagementError> {
+    let mut plugins = get_plugins()?;
+    plugins.remove(plugin_name).ok_or(PluginManagementError::PluginNotFound)
+}
+
+pub fn run_plugin(plugin_name: &str) -> Result<PluginProcess, Error> {
+    let plugin = get_plugin(plugin_name)?;
+    Ok(run_script(&plugin)?)
+}
+
+pub fn remove_plugin(plugin_name: &str) -> Result<(), Error> {
+    let plugin = get_plugin(plugin_name)?;
+    if let Err(error) = trash::delete(plugin.path) {
+        return Err(PluginManagementError::TrashError(error))?
+    }
+    Ok(())
+}
+
+pub fn add_plugin(path: &PathBuf) -> Result<(), PluginManagementError> {
+    let mut dest = PathBuf::from_str("./plugins/").unwrap();
+    dest.extend(path.file_name());
+    copy_dir(path, dest)?;
+    Ok(())
 }
 
 // #[cfg(test)]

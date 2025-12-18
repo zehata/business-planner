@@ -1,11 +1,11 @@
 use std::{fmt, string::FromUtf8Error};
 
-use crate::{api::session::{LoadSessionError, SaveSessionError}, io::error::IoError, plugins::error::{PluginDiscoveryError, PluginError}};
+use crate::{api::session::{LoadSessionError, SaveSessionError}, io::error::IoError, plugins::error::{PluginManagementError, PluginError}};
 
 #[derive(Debug)]
 pub enum Error {
     IoError(IoError),
-    PluginDiscoveryError(PluginDiscoveryError),
+    PluginManagementError(PluginManagementError),
     PluginError(PluginError),
     FromUtf8Error(FromUtf8Error),
     SaveSessionError(SaveSessionError),
@@ -15,7 +15,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
-            Error::PluginDiscoveryError(error) => format!("While looking for plugins, encountered this error: {:?}", error),
+            Error::PluginManagementError(error) => format!("While looking for plugins, encountered this error: {:?}", error),
             Error::PluginError(error) => format!("While running plugin, encountered this error: {:?}", error),
             Error::SaveSessionError(error) => format!("While saving the session, encountered this error: {:?}", error),
             Error::LoadSessionError(error) => format!("While loading the session from file, encountered this error: {:?}", error),
@@ -31,9 +31,9 @@ impl From<IoError> for Error {
     }
 }
 
-impl From<PluginDiscoveryError> for Error {
-    fn from(value: PluginDiscoveryError) -> Self {
-        Error::PluginDiscoveryError(value)
+impl From<PluginManagementError> for Error {
+    fn from(value: PluginManagementError) -> Self {
+        Error::PluginManagementError(value)
     }
 }
 

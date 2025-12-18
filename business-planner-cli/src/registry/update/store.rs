@@ -1,11 +1,11 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{env, path::PathBuf, str::FromStr};
 
 use business_planner::api::{registry::{DataSource, ExcelDataSource, PostgresqlDataSource, Store}, session::Session};
 use clap::{Arg, ArgMatches, Command};
 use inquire::{InquireError, Select, Text};
 use uuid::Uuid;
 
-use crate::{Error, NonError, utils};
+use crate::{Error, NonError, utils::prompt_select_path::{PathFilter, prompt_select_path}};
 
 pub fn get_update_store_subcommand() -> Command {
     Command::new("store")
@@ -84,7 +84,8 @@ pub async fn prompt_populate_excel_data_source(excel_data_source: &mut ExcelData
     while !user_ok {
         match Select::new("", vec!["File path", "Sheet", "Range", "Ok"]).prompt()? {
             "File path" => {
-                match utils::select_file().await {
+                let current_dir = env::current_dir()?;
+                match prompt_select_path(&current_dir, PathFilter::File(Some("xlsx"))).await {
                     Ok(path) => excel_data_source.set_file_path(Some(&path)),
                     Err(Error::InquireError(InquireError::OperationCanceled)) => continue,
                     Err(error) => return Err(error),

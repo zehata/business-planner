@@ -1,16 +1,24 @@
 use std::io::Error as IoError;
 use std::ffi::NulError;
+use trash::Error as TrashError;
 
 #[derive(Debug)]
-pub enum PluginDiscoveryError {
+pub enum PluginManagementError {
     IoError(IoError),
+    TrashError(TrashError),
     ReadDirectoryError,
     PluginNotFound,
 }
 
-impl From<IoError> for PluginDiscoveryError {
+impl From<IoError> for PluginManagementError {
     fn from(value: IoError) -> Self {
-        PluginDiscoveryError::IoError(value)
+        PluginManagementError::IoError(value)
+    }
+}
+
+impl From<TrashError> for PluginManagementError {
+    fn from(value: TrashError) -> Self {
+        PluginManagementError::TrashError(value)
     }
 }
 
@@ -18,7 +26,7 @@ impl From<IoError> for PluginDiscoveryError {
 pub enum PluginError {
     IoError(IoError),
     ConversionToCStringErr(NulError),
-    PluginDiscoveryError(PluginDiscoveryError),
+    PluginManagementError(PluginManagementError),
     PluginMissingError,
     IncompleteDataSource,
 }
@@ -35,8 +43,8 @@ impl From<NulError> for PluginError {
     }
 }
 
-impl From<PluginDiscoveryError> for PluginError {
-    fn from(value: PluginDiscoveryError) -> Self {
-        PluginError::PluginDiscoveryError(value)
+impl From<PluginManagementError> for PluginError {
+    fn from(value: PluginManagementError) -> Self {
+        PluginError::PluginManagementError(value)
     }
 }

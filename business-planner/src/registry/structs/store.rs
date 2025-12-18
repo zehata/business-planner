@@ -3,22 +3,7 @@ use std::{collections::HashMap, fmt::{self, Display}, path::PathBuf};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{io::{error::ReadError, excel::{create_vec_from_cells, read_once}}, registry::{Data, Registry, RegistryItem, RegistryItemInternals, RegistryItemObject}};
-
-// #[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
-// pub struct Store {
-//     data: StoreData,
-//     data_source: StoreDataSources,
-// }
-
-// impl Store {
-//     fn new(data: StoreData, data_source: StoreDataSources) -> Store {
-//         Store {
-//             data,
-//             data_source,
-//         }
-//     }
-// }
+use crate::{io::{error::ReadError, excel::{create_vec_from_cells, read_once}}, registry::{Data, Registry, RegistryItem, RegistryItemData, RegistryItemInternals, RegistryItemObject}};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Default)]
 pub struct StoreData {
@@ -33,6 +18,8 @@ impl StoreData {
         }
     }
 }
+
+impl RegistryItemData for StoreData {}
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct Store {
