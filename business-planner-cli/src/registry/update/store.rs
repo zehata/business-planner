@@ -1,6 +1,6 @@
 use std::{env, path::PathBuf, str::FromStr};
 
-use business_planner::api::{registry::{DataSource, ExcelDataSource, PostgresqlDataSource, Store}, session::Session};
+use business_planner::api::{item::{DataSource, ExcelDataSource, PostgresqlDataSource, StoreItem}, session::Session};
 use clap::{Arg, ArgMatches, Command};
 use inquire::{InquireError, Select, Text};
 use uuid::Uuid;
@@ -64,11 +64,11 @@ pub fn get_update_store_subcommand() -> Command {
         )
 }
 
-pub fn get_store_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut Store> {
-    session.get::<Store>(uuid)
+pub fn get_store_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut StoreItem> {
+    session.get::<StoreItem>(uuid)
 }
 
-pub fn select_store<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut Store> {
+pub fn select_store<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut StoreItem> {
     if let Some(uuid) = arg_matches.get_one::<String>("by_id") && let Ok(uuid) = Uuid::parse_str(uuid) {
         return get_store_by_uuid(session, &uuid)
     }
@@ -76,7 +76,7 @@ pub fn select_store<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> O
 }
 
 pub fn get_update_store_interactive_subcommand(session: &mut Session) -> Vec<String> {
-    session.list::<Store>()
+    session.list::<StoreItem>()
 }
 
 pub async fn prompt_populate_excel_data_source(excel_data_source: &mut ExcelDataSource) -> Result<(), Error> {
@@ -107,7 +107,7 @@ pub async fn prompt_populate_excel_data_source(excel_data_source: &mut ExcelData
 }
 
 pub async fn parse_update_store_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let store = session.get::<Store>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
+    let store = session.get::<StoreItem>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
 
     let unchanged_name_hint = match store.get_name() {
         Some(name) => &format!("({})", name),
@@ -272,12 +272,12 @@ mod test {
     #[tokio::test]
     async fn test_update_store() {
         let mut session = create_session();
-        let uuid = session.create(Store::new());
+        let uuid = session.create(StoreItem::new());
         
         let buffer = format!("--by_id {} --name \"test name\"", uuid);
         let result = parse(&buffer, &mut session).await;
         result.expect("update command should run successfully");
-        let material = session.read::<Store>(&uuid);
+        let material = session.read::<StoreItem>(&uuid);
         assert_eq!(material.expect("store should exist").get_name().expect("name should be set"), "test name")
     }
 }

@@ -1,4 +1,4 @@
-use crate::{io::excel::error::ExcelError, registry::Data};
+use crate::{data::Value, io::excel::error::ExcelError};
 use std::path::PathBuf;
 use calamine::{Cells, Data as CalamineData, Range, Reader, Xlsx, open_workbook};
 use regex::Regex;
@@ -75,18 +75,18 @@ pub fn read_once(spreadsheet_path: &PathBuf, sheet: &str, range: &str) -> Result
     Ok(range)
 }
 
-pub fn create_vec_from_cells(cells: Cells<'_, CalamineData>) -> Result<Vec<Data>, ExcelError> {
+pub fn create_vec_from_cells(cells: Cells<'_, CalamineData>) -> Result<Vec<Value>, ExcelError> {
     let values = cells.into_iter().map(|(_row, _column, data)| {
         match data {
-            CalamineData::Int(value) => Data::Int64(*value),
-            CalamineData::Float(value) => Data::Float64(*value),
-            CalamineData::String(value) => Data::String(value.clone()),
-            CalamineData::Bool(value) => Data::Boolean(*value),
+            CalamineData::Int(value) => Value::Int64(*value),
+            CalamineData::Float(value) => Value::Float64(*value),
+            CalamineData::String(value) => Value::String(value.clone()),
+            CalamineData::Bool(value) => Value::Boolean(*value),
             CalamineData::DateTime(value) => todo!(),
             CalamineData::DateTimeIso(value) => todo!(),
             CalamineData::DurationIso(_) => todo!(),
             CalamineData::Error(cell_error_type) => todo!(),
-            CalamineData::Empty => Data::Null,
+            CalamineData::Empty => Value::Null,
         }
     }).collect::<Vec<_>>();
     Ok(values)

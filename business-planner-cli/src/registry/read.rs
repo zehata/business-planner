@@ -1,4 +1,4 @@
-use business_planner::api::{registry::{Material, RegistryItem, Store}, session::Session};
+use business_planner::api::{item::{Item, MaterialItem, StoreItem}, session::Session};
 use clap::{ArgMatches, Command};
 use inquire::{InquireError, Select};
 use uuid::Uuid;
@@ -11,27 +11,29 @@ pub fn get_read_subcommand() -> Command {
         .takes_registry_item_id_arg()
 }
 
-pub async fn prompt_user_select_registry_item<'a, T>(session: &'a Session, message: &str) -> Result<&'a T, InquireError>
+pub async fn prompt_user_select_registry_item<'a, T>(session: &'a mut Session, message: &str) -> Result<&'a Uuid, InquireError>
     where
-        T: 'a + RegistryItem<RegistryItem = T> {
+        T: 'a + Item,
+    {
+
     let materials = session.list_names::<T>();
     let material_names = materials.iter().map(|(uuid, _)| {
         uuid.to_string()
     }).collect::<Vec<_>>();
     let selection = Select::new(message, material_names).raw_prompt()?;
     let (id, _) = materials.get(selection.index).unwrap();
-    Ok(session.read::<T>(id).unwrap())
+    Ok(id)
 }
 
 pub async fn parse_interactive_read_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
     match command {
         "material" => {
-            let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
+            let material = prompt_user_select_registry_item::<MaterialItem>(session, "Material id").await?;
             println!("{}", material);
             Ok(NonError::Continue)
         },
         "store" => {
-            let store = prompt_user_select_registry_item::<Store>(session, "Store id").await?;
+            let store = prompt_user_select_registry_item::<StoreItem>(session, "Store id").await?;
             println!("{}", store);
             Ok(NonError::Continue)
         },
@@ -47,12 +49,12 @@ pub async fn parse_non_interactive_read_subcommand(arg_matches: &ArgMatches, ses
     
     match &item_type[..] {
         "material" => {
-            let material = session.read::<Material>(&id).ok_or(Error::InvalidInput)?;
+            let material = session.read::<MaterialItem>(&id).ok_or(Error::InvalidInput)?;
             println!("{}", material);
             Ok(NonError::Continue)
         },
         "store" => {
-            let store = session.read::<Store>(&id).ok_or(Error::InvalidInput)?;
+            let store = session.read::<StoreItem>(&id).ok_or(Error::InvalidInput)?;
             println!("{}", store);
             Ok(NonError::Continue)
         },

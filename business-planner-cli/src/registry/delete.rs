@@ -1,5 +1,5 @@
 
-use business_planner::api::{registry::{Material, Store}, session::Session};
+use business_planner::api::{item::{MaterialItem, StoreItem}, session::Session};
 use clap::{ArgMatches, Command};
 use uuid::Uuid;
 
@@ -16,11 +16,11 @@ pub async fn parse_interactive_delete_subcommand(command: &str, session: &mut Se
 
     match command {
         "material" => {
-            session.delete::<Material>(&id);
+            session.delete::<MaterialItem>(&id);
             Ok(NonError::Continue)
         },
         "store" => {
-            session.delete::<Store>(&id);
+            session.delete::<StoreItem>(&id);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput),
@@ -35,11 +35,11 @@ pub async fn parse_non_interactive_delete_subcommand(arg_matches: &ArgMatches, s
     
     match &item_type[..] {
         "material" => {
-            session.delete::<Material>(&id);
+            session.delete::<MaterialItem>(&id);
             Ok(NonError::Continue)
         },
         "store" => {
-            session.delete::<Store>(&id);
+            session.delete::<StoreItem>(&id);
             Ok(NonError::Continue)
         },
         _ => Err(Error::InvalidInput)

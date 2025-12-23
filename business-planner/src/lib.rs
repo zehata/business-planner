@@ -3,5 +3,7 @@ mod io;
 mod usage_rates;
 mod session;
 mod plugins;
-mod registry;
+mod item;
 mod error;
+mod resolver;
+mod data;

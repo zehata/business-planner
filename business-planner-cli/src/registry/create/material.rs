@@ -1,4 +1,4 @@
-use business_planner::api::{registry::Material, session::Session};
+use business_planner::api::{item::MaterialItem, session::Session};
 use clap::{Arg, ArgMatches, Command};
 use inquire::Text;
 
@@ -14,7 +14,7 @@ pub fn get_create_material_subcommand() -> Command {
 }
 
 pub async fn create_material_interactive_subcommand(session: &mut Session) -> Result<NonError, Error> {
-    let mut material = Material::new();
+    let mut material = MaterialItem::new();
 
     if let Some(name) = Text::new("name")
         .with_help_message("Material name.")
@@ -28,7 +28,7 @@ pub async fn create_material_interactive_subcommand(session: &mut Session) -> Re
 }
 
 pub async fn parse_create_material_non_interactive_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let mut material = Material::new();
+    let mut material = MaterialItem::new();
     
     if let Some(name) = arg_matches.get_one::<String>("name") {
         material.set_name(name);

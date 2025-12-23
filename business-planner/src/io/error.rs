@@ -25,6 +25,7 @@ pub enum ReadError {
     SqlxError(SqlxError),
     NoRow,
     NoCell,
+    NoDataSource,
 }
 
 impl From<ExcelError> for ReadError {

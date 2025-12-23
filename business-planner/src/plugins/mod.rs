@@ -9,12 +9,10 @@ use serde::{Deserialize, Serialize};
 
 use sonic_rs::{Deserializer, Serializer, json};
 
-use crate::api::registry::{Material, Store};
+use crate::data::{Data, MaterialData, StoreData};
 use crate::error::Error;
-use crate::io::error::IoError;
+use crate::item::{Item, MaterialItem, StoreItem};
 use crate::plugins::error::{PluginError, PluginManagementError};
-use crate::registry::structs::store::StoreData;
-use crate::registry::{RegistryItem, RegistryItemInternals};
 
 pub mod error;
 
@@ -118,26 +116,23 @@ pub struct AnyDataRequest<'a> {
     stdin: &'a mut ChildStdin,
 }
 
-impl DataRequest<Material> for AnyDataRequest<'_> {
+impl DataRequest<MaterialItem, MaterialData> for AnyDataRequest<'_> {
     fn get_stdin(&mut self) -> &mut ChildStdin {
         self.stdin
     }
 
-    fn format_message(&self, item: &Material) -> Result<Response, Error> {
-        Ok(Response::DataResponse(DataResponse::Material(item.clone())))
+    fn format_message(&self, data: MaterialData) -> Result<Response, Error> {
+        Ok(Response::DataResponse(DataResponse::Material(data)))
     }
 }
 
-impl DataRequest<Store> for AnyDataRequest<'_> {
+impl DataRequest<StoreItem, StoreData> for AnyDataRequest<'_> {
     fn get_stdin(&mut self) -> &mut ChildStdin {
         self.stdin
     }
 
-    fn format_message(&self, item: &Store) -> Result<Response, Error> {
-        match item.fetch_data() {
-            Ok(store) => Ok(Response::DataResponse(DataResponse::Store(store))),
-            Err(error) => Err(Error::IoError(IoError::ReadError(error)))
-        }
+    fn format_message(&self, data: StoreData) -> Result<Response, Error> {
+        Ok(Response::DataResponse(DataResponse::Store(data)))
     }
 }
 
@@ -145,26 +140,23 @@ pub struct MaterialDataRequest<'a> {
     stdin: &'a mut ChildStdin,
 }
 
-impl DataRequest<Material> for MaterialDataRequest<'_> {
+impl DataRequest<MaterialItem, MaterialData> for MaterialDataRequest<'_> {
     fn get_stdin(&mut self) -> &mut ChildStdin {
         self.stdin
     }
 
-    fn format_message(&self, item: &Material) -> Result<Response, Error> {
-        match item.fetch_data() {
-            Ok(material) => Ok(Response::DataResponse(DataResponse::Material(material))),
-            Err(error) => Err(Error::IoError(IoError::ReadError(error)))
-        }
+    fn format_message(&self, data: MaterialData) -> Result<Response, Error> {
+        Ok(Response::DataResponse(DataResponse::Material(data)))
     }
 }
 
-pub trait DataRequest<T: RegistryItem> {
+pub trait DataRequest<T: Item<Data = D>, D: Data> {
     fn get_stdin(&mut self) -> &mut ChildStdin;
 
-    fn format_message(&self, item: &T) -> Result<Response, Error>;
+    fn format_message(&self, data: D) -> Result<Response, Error>;
 
-    fn send_response(&mut self, item: &T) -> Result<(), Error> {
-        let message = self.format_message(item)?;
+    fn send_response(&mut self, data: D) -> Result<(), Error> {
+        let message = self.format_message(data)?;
 
         let value = json!(message);
         let mut ser = Serializer::new(Vec::new());
@@ -189,7 +181,7 @@ pub enum PluginResponse<'a> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DataResponse {
-    Material(Material),
+    Material(MaterialData),
     Store(StoreData),
 }
 

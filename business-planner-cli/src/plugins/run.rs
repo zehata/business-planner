@@ -1,4 +1,4 @@
-use business_planner::api::{plugins::{DataRequest, PluginResponse, run_plugin}, registry::{Material, Store}, session::Session};
+use business_planner::api::{plugins::{DataRequest, PluginResponse, run_plugin}, item::{MaterialItem, StoreItem}, session::Session};
 use inquire::Select;
 
 use crate::{Error, NonError, registry::{get_registry_item_types, read::prompt_user_select_registry_item}};
@@ -14,19 +14,22 @@ pub async fn parse_interactive_run_plugins_subcommand(command: &str, session: &m
                         let item_type = Select::new("Item type", get_registry_item_types()).prompt()?;
                         match &item_type[..] {
                             "material" => {
-                                let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
-                                data_request.send_response(material)?;
+                                let id = *prompt_user_select_registry_item::<MaterialItem>(session, "Material id").await?;
+                                let data = session.resolve::<MaterialItem>(&id)?;
+                                data_request.send_response(data.clone())?;
                             },
                             "store" => {
-                                let store = prompt_user_select_registry_item::<Store>(session, "Store id").await?;
-                                data_request.send_response(store)?;
+                                let id = *prompt_user_select_registry_item::<StoreItem>(session, "Store id").await?;
+                                let data = session.resolve::<StoreItem>(&id)?;
+                                data_request.send_response(data.clone())?;
                             },
                             _ => return Err(Error::InvalidInput),
                         };
                     },
                     PluginResponse::MaterialDataRequest(mut data_request) => {
-                        let material = prompt_user_select_registry_item::<Material>(session, "Material id").await?;
-                        data_request.send_response(material)?;
+                        let id = *prompt_user_select_registry_item::<MaterialItem>(session, "Material id").await?;
+                                let data = session.resolve::<MaterialItem>(&id)?;
+                        data_request.send_response(data.clone())?;
                     },
                     PluginResponse::Message(message) => {
                         println!("{message}");

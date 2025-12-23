@@ -1,4 +1,4 @@
-use business_planner::api::{registry::Material, session::Session};
+use business_planner::api::{item::MaterialItem, session::Session};
 use clap::{Arg, ArgMatches, Command};
 use inquire::Text;
 use uuid::Uuid;
@@ -19,11 +19,11 @@ pub fn get_update_material_subcommand() -> Command {
         )
 }
 
-pub fn get_material_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut Material> {
-    session.get::<Material>(uuid)
+pub fn get_material_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut MaterialItem> {
+    session.get::<MaterialItem>(uuid)
 }
 
-pub fn select_material<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut Material> {
+pub fn select_material<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut MaterialItem> {
     if
         let Some(uuid) = arg_matches.get_one::<String>("by_id") &&
         let Ok(uuid) = Uuid::parse_str(uuid)
@@ -34,11 +34,11 @@ pub fn select_material<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -
 }
 
 pub fn get_update_material_interactive_subcommand(session: &mut Session) -> Vec<String> {
-    session.list::<Material>()
+    session.list::<MaterialItem>()
 }
 
 pub async fn parse_update_material_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let material = session.get::<Material>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
+    let material = session.get::<MaterialItem>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
 
     let unchanged_name_hint = match material.get_name() {
         Some(name) => &format!("({})", name),
@@ -85,12 +85,12 @@ mod test {
     #[tokio::test]
     async fn test_update_material() {
         let mut session = create_session();
-        let uuid = session.create(Material::new());
+        let uuid = session.create(MaterialItem::new());
         
         let buffer = format!("--by_id {} --name \"test name\"", uuid);
         let result = parse(&buffer, &mut session).await;
         result.expect("update command should run successfully");
-        let material = session.read::<Material>(&uuid);
+        let material = session.read::<MaterialItem>(&uuid);
         assert_eq!(material.expect("material should exist").get_name().expect("name should be set"), "test name")
     }
 }

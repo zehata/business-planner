@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use business_planner::api::{registry::{DataSource, ExcelDataSource, PostgresqlDataSource, Store}, session::Session};
+use business_planner::api::{item::{DataSource, ExcelDataSource, PostgresqlDataSource, StoreItem}, session::Session};
 use clap::{Arg, ArgMatches, Command};
 use inquire::Text;
 
@@ -46,7 +46,7 @@ pub fn get_create_store_subcommand() -> Command {
 }
 
 pub async fn create_store_interactive_subcommand(session: &mut Session) -> Result<NonError, Error> {
-    let mut store = Store::new();
+    let mut store = StoreItem::new();
 
     let unchanged_name_hint = match store.get_name() {
         Some(name) => &format!("({})", name),
@@ -64,7 +64,7 @@ pub async fn create_store_interactive_subcommand(session: &mut Session) -> Resul
 }
 
 pub async fn parse_create_store_non_interactive_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let mut store = Store::new();
+    let mut store = StoreItem::new();
     
     if let Some(name) = arg_matches.get_one::<String>("name") {
         store.set_name(name);
