@@ -19,8 +19,8 @@ pub fn convert_column_str_to_index(column_str: &str) -> Result<u32, ExcelError> 
 }
 
 pub fn read_once(spreadsheet_path: &PathBuf, sheet: &str, range: &str) -> Result<Range<CalamineData>, ExcelError> {
-    let mut book: Xlsx<_> = open_workbook(spreadsheet_path).unwrap();
-    let sheet: Range<CalamineData> = book.worksheet_range(sheet).unwrap();
+    let mut book: Xlsx<_> = open_workbook(spreadsheet_path)?;
+    let sheet: Range<CalamineData> = book.worksheet_range(sheet)?;
 
     let re = Regex::new(r"(?:(?<sheet_name>\w+)(?:!)){0,1}(?<range_start_column>[A-Za-z]{1,})(?<range_start_row>\d{0,})(?::(?<range_end_column>[A-Za-z]{1,})(?<range_end_row>\d{0,})){0,1}").unwrap();
     let captures = re.captures(range).ok_or(ExcelError::InvalidRange)?;
