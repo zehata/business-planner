@@ -2,9 +2,9 @@ use std::{collections::HashMap, fmt};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{data::MaterialData, item::{Item, ItemIternals, ItemObject, Registry}, resolver::MaterialResolver};
+use crate::{data::MaterialData, item::{Item, ItemAssociatedTypes, ItemObject, Registry, items::ItemInternals}, resolver::MaterialResolver};
 
-#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Hash, Debug, Default, Clone)]
 pub struct MaterialItem {
     name: Option<String>
 }
@@ -23,26 +23,28 @@ impl MaterialItem {
     }
 }
 
-impl Item for MaterialItem {
-    fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
-        registry.materials.iter().map(|(uuid, material)| {
-            (uuid, material.get_name())
-        }).collect()
-    }
-}
-
-impl ItemObject for MaterialItem {
+impl ItemAssociatedTypes for MaterialItem {
     type Data = MaterialData;
     type Resolver = MaterialResolver;
 }
 
-impl ItemIternals for MaterialItem {
+impl ItemObject for MaterialItem {
     fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Self> {
         &registry.materials
     }
 
     fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self> {
         &mut registry.materials
+    }
+}
+
+impl ItemInternals for MaterialItem {}
+
+impl Item for MaterialItem {
+    fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
+        registry.materials.iter().map(|(uuid, material)| {
+            (uuid, material.get_name())
+        }).collect()
     }
 }
 

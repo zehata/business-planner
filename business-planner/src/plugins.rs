@@ -11,7 +11,7 @@ use sonic_rs::{Deserializer, Serializer, json};
 
 use crate::data::{Data, MaterialData, StoreData};
 use crate::error::Error;
-use crate::item::{Item, MaterialItem, StoreItem};
+use crate::item::{NodeItem, StoreItem};
 use crate::plugins::error::{PluginError, PluginManagementError};
 
 pub mod error;
@@ -116,16 +116,6 @@ pub struct AnyDataRequest<'a> {
     stdin: &'a mut ChildStdin,
 }
 
-impl DataRequest<MaterialItem, MaterialData> for AnyDataRequest<'_> {
-    fn get_stdin(&mut self) -> &mut ChildStdin {
-        self.stdin
-    }
-
-    fn format_message(&self, data: MaterialData) -> Result<Response, Error> {
-        Ok(Response::DataResponse(DataResponse::Material(data)))
-    }
-}
-
 impl DataRequest<StoreItem, StoreData> for AnyDataRequest<'_> {
     fn get_stdin(&mut self) -> &mut ChildStdin {
         self.stdin
@@ -136,21 +126,7 @@ impl DataRequest<StoreItem, StoreData> for AnyDataRequest<'_> {
     }
 }
 
-pub struct MaterialDataRequest<'a> {
-    stdin: &'a mut ChildStdin,
-}
-
-impl DataRequest<MaterialItem, MaterialData> for MaterialDataRequest<'_> {
-    fn get_stdin(&mut self) -> &mut ChildStdin {
-        self.stdin
-    }
-
-    fn format_message(&self, data: MaterialData) -> Result<Response, Error> {
-        Ok(Response::DataResponse(DataResponse::Material(data)))
-    }
-}
-
-pub trait DataRequest<T: Item<Data = D>, D: Data> {
+pub trait DataRequest<T: NodeItem<Data = D>, D: Data> {
     fn get_stdin(&mut self) -> &mut ChildStdin;
 
     fn format_message(&self, data: D) -> Result<Response, Error>;
@@ -173,7 +149,6 @@ pub trait DataRequest<T: Item<Data = D>, D: Data> {
 
 pub enum PluginResponse<'a> {
     AnyDataRequest(AnyDataRequest<'a>),
-    MaterialDataRequest(MaterialDataRequest<'a>),
     Message(String),
     Report(String),
     ProcessEnded,

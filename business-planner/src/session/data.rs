@@ -1,11 +1,11 @@
 use uuid::Uuid;
 
-use crate::{error::Error, io::error::{IoError, ReadError}, item::Item};
+use crate::{error::Error, io::error::{IoError, ReadError}, item::NodeItem};
 
 use super::Session;
 
 impl Session {
-    pub fn resolve<I: Item>(&mut self, id: &Uuid) -> Result<&I::Data, Error> {
+    pub fn resolve<I: NodeItem>(&mut self, id: &Uuid) -> Result<&I::Data, Error> {
         let item = self.persistent_data.registry.get::<I>(id).ok_or(IoError::ReadError(ReadError::NoDataSource))?;
 
         match self.resolver.resolve(id, item) {

@@ -10,7 +10,7 @@ pub struct MaterialResolver {
 }
 
 impl ItemResolver for MaterialResolver {
-    type Item = MaterialItem;
+    type ItemObject = MaterialItem;
     type Data = MaterialData;
 
     fn resolve<'a>(resolver: &'a mut Resolver, id: &Uuid, _registry_item: &MaterialItem) -> Result<&'a MaterialData, ReadError> {

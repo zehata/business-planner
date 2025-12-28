@@ -10,10 +10,10 @@ pub struct StoreResolver {
 }
 
 impl ItemResolver for StoreResolver {
-    type Item = StoreItem;
+    type ItemObject = StoreItem;
     type Data = StoreData;
 
-    fn resolve<'a>(resolver: &'a mut super::Resolver, id: &Uuid, registry_item: &Self::Item) -> Result<&'a Self::Data, ReadError> {
+    fn resolve<'a>(resolver: &'a mut super::Resolver, id: &Uuid, registry_item: &Self::ItemObject) -> Result<&'a Self::Data, ReadError> {
         let resolver: Result<&mut StoreResolver, ReadError> = match resolver.stores.entry(*id) {
             Entry::Occupied(entry) => {
                 Ok(entry.into_mut())

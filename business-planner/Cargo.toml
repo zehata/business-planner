@@ -6,8 +6,8 @@ edition = "2024"
 [dependencies]
 # runtime
 tokio = "1.48.0"
-
 jiff = { version = "0.2.16", features=["serde"] }
+petgraph = { version = "0.8.3", features=["serde-1"] }
 
 # save files
 serde = "1.0.228"

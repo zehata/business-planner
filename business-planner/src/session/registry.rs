@@ -9,6 +9,10 @@ impl Session {
         self.persistent_data.registry.create::<T>(item)
     }
 
+    pub fn contains<T: Item>(&self, id: &Uuid) -> bool {
+        self.persistent_data.registry.contains::<T>(id)
+    }
+
     pub fn read<T: Item>(&self, id: &Uuid) -> Option<&T> {
         self.persistent_data.registry.read::<T>(id)
     }

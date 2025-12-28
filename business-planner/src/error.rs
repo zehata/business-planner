@@ -1,6 +1,6 @@
 use std::{fmt, string::FromUtf8Error};
 
-use crate::{api::session::{LoadSessionError, SaveSessionError}, io::error::IoError, plugins::error::{PluginManagementError, PluginError}};
+use crate::{session::{LoadSessionError, SaveSessionError}, io::error::IoError, plugins::error::{PluginManagementError, PluginError}, graphs::GraphsError};
 
 #[derive(Debug)]
 pub enum Error {
@@ -10,6 +10,7 @@ pub enum Error {
     FromUtf8Error(FromUtf8Error),
     SaveSessionError(SaveSessionError),
     LoadSessionError(LoadSessionError),
+    GraphsError(GraphsError),
 }
 
 impl fmt::Display for Error {
@@ -58,5 +59,11 @@ impl From<SaveSessionError> for Error {
 impl From<LoadSessionError> for Error {
     fn from(value: LoadSessionError) -> Self {
         Error::LoadSessionError(value)
+    }
+}
+
+impl From<GraphsError> for Error {
+    fn from(value: GraphsError) -> Self {
+        Error::GraphsError(value)
     }
 }

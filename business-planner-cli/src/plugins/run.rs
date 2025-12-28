@@ -1,4 +1,4 @@
-use business_planner::api::{plugins::{DataRequest, PluginResponse, run_plugin}, item::{MaterialItem, StoreItem}, session::Session};
+use business_planner::api::{plugins::{DataRequest, PluginResponse, run_plugin}, item::StoreItem, session::Session};
 use inquire::Select;
 
 use crate::{Error, NonError, registry::{get_registry_item_types, read::prompt_user_select_registry_item}};
@@ -11,13 +11,8 @@ pub async fn parse_interactive_run_plugins_subcommand(command: &str, session: &m
             Ok(response) => {
                 match response {
                     PluginResponse::AnyDataRequest(mut data_request) => {
-                        let item_type = Select::new("Item type", get_registry_item_types()).prompt()?;
+                        let item_type = Select::new("NodeItem type", get_registry_item_types()).prompt()?;
                         match &item_type[..] {
-                            "material" => {
-                                let id = *prompt_user_select_registry_item::<MaterialItem>(session, "Material id").await?;
-                                let data = session.resolve::<MaterialItem>(&id)?;
-                                data_request.send_response(data.clone())?;
-                            },
                             "store" => {
                                 let id = *prompt_user_select_registry_item::<StoreItem>(session, "Store id").await?;
                                 let data = session.resolve::<StoreItem>(&id)?;
@@ -25,11 +20,6 @@ pub async fn parse_interactive_run_plugins_subcommand(command: &str, session: &m
                             },
                             _ => return Err(Error::InvalidInput),
                         };
-                    },
-                    PluginResponse::MaterialDataRequest(mut data_request) => {
-                        let id = *prompt_user_select_registry_item::<MaterialItem>(session, "Material id").await?;
-                                let data = session.resolve::<MaterialItem>(&id)?;
-                        data_request.send_response(data.clone())?;
                     },
                     PluginResponse::Message(message) => {
                         println!("{message}");

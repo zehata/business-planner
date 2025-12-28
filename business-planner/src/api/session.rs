@@ -4,8 +4,6 @@ use crate::session::{self};
 
 use crate::api::error::BusinessPlannerError;
 
-pub use session::error::{SaveSessionError, LoadSessionError};
-
 pub use session::Session;
 
 pub fn create_session () -> Session {

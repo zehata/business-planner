@@ -3,9 +3,9 @@ use std::{collections::HashMap, fmt::{self, Display}};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{data::StoreData, item::{DataSource, Item, ItemIternals, ItemObject, Registry}, resolver::StoreResolver};
+use crate::{data::StoreData, graphs::{Graph, Graphs, ProductionLine}, item::{DataSource, Item, ItemAssociatedTypes, ItemObject, NodeItem, Registry, items::{ItemInternals, NodeItemInternals}}, resolver::StoreResolver};
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct StoreItem {
     name: Option<String>,
     timestamps: Option<DataSource>,
@@ -38,6 +38,10 @@ impl StoreItem {
     }
 }
 
+impl ItemInternals for StoreItem {
+    
+}
+
 impl Item for StoreItem {
     fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
         registry.stores.iter().map(|(uuid, store)| {
@@ -46,18 +50,31 @@ impl Item for StoreItem {
     }
 }
 
-impl ItemObject for StoreItem {
+impl NodeItem for StoreItem {
+
+}
+
+impl ItemAssociatedTypes for StoreItem {
     type Resolver = StoreResolver;
     type Data = StoreData;
 }
 
-impl ItemIternals for StoreItem {
+impl ItemObject for StoreItem {
     fn get_item_registry(registry: &Registry) -> &HashMap<Uuid, Self> {
         &registry.stores
     }
     
     fn get_item_registry_mut(registry: &mut Registry) -> &mut HashMap<Uuid, Self> {
         &mut registry.stores
+    }    
+}
+
+impl NodeItemInternals for StoreItem {
+    fn remove_from_graphs(id: &Uuid, graphs: &mut Graphs) {
+        let production_lines = ProductionLine::get_graphs_mut(graphs);
+        production_lines.iter_mut().for_each(|(_, production_line)| {
+            let _ = production_line.remove_node(id);
+        });
     }
 }
 
