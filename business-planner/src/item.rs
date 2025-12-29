@@ -54,10 +54,6 @@ impl Registry {
         T::update(id, self, item)
     }
 
-    pub fn delete<T: Item>(&mut self, id: &Uuid) {
-        T::delete(id, self);
-    }
-
     pub fn list<T: Item>(&self) -> Vec<String> {
         T::list(self)
     }

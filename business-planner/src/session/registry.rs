@@ -26,7 +26,7 @@ impl Session {
     }
 
     pub fn delete<T: Item>(&mut self, id: &Uuid) {
-        self.persistent_data.registry.delete::<T>(id);
+        self.persistent_data.delete::<T>(id);
     }
 
     pub fn list<T: Item>(&self) -> Vec<String> {

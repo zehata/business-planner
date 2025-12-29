@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{data::MaterialData, item::{Item, ItemAssociatedTypes, ItemObject, Registry, items::ItemInternals}, resolver::MaterialResolver};
+use crate::{data::MaterialData, item::{Item, ItemAssociatedTypes, ItemObject, Registry, items::ItemInternals}, resolver::MaterialResolver, session::PersistentData};
 
 #[derive(Serialize, Deserialize, Hash, Debug, Default, Clone)]
 pub struct MaterialItem {
@@ -41,6 +41,12 @@ impl ItemObject for MaterialItem {
 impl ItemInternals for MaterialItem {}
 
 impl Item for MaterialItem {
+    fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
+        let registry = persistent_data.get_registry_mut();
+        // registry.ingredients
+        registry.materials.remove(id)
+    }
+    
     fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
         registry.materials.iter().map(|(uuid, material)| {
             (uuid, material.get_name())

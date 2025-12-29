@@ -4,7 +4,7 @@ mod ingredient;
 mod store;
 mod material;
 
-use crate::{graphs::Graphs, item::{ItemObject, Registry}};
+use crate::{graphs::Graphs, item::{ItemObject, Registry}, session::PersistentData};
 
 pub use {ingredient::IngredientItem, store::StoreItem, material::MaterialItem};
 
@@ -32,8 +32,8 @@ pub trait Item: ItemInternals {
         Self::get_item_registry_mut(registry).insert(*id, item);
     }
 
-    fn delete(id: &Uuid, registry: &mut Registry) -> Option<Self> {
-        Self::get_item_registry_mut(registry).remove(id)
+    fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
+        Self::get_item_registry_mut(persistent_data.get_registry_mut()).remove(id)
     }
 
     fn list(registry: &Registry) -> Vec<String> {
@@ -47,7 +47,10 @@ pub trait Item: ItemInternals {
 
 #[allow(private_bounds)]
 pub trait NodeItem: Item + NodeItemInternals {
-
+    fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
+        Self::remove_from_graphs(id, persistent_data.get_graphs());
+        Self::get_item_registry_mut(persistent_data.get_registry_mut()).remove(id)
+    }
 }
 
 pub(crate) trait ItemInternals: ItemObject {

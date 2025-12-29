@@ -3,11 +3,12 @@ use std::{collections::HashMap, fmt::{self, Display}};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{data::IngredientData, graphs::{Graph, Graphs, Recipe}, item::{Item, ItemAssociatedTypes, ItemObject, NodeItem, Registry, items::{ItemInternals, NodeItemInternals}}, resolver::IngredientResolver};
+use crate::{data::IngredientData, graphs::{Graph, Graphs, Recipe}, item::{Item, ItemAssociatedTypes, ItemObject, NodeItem, Registry, items::{ItemInternals, NodeItemInternals}}, resolver::IngredientResolver, session::PersistentData};
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct IngredientItem {
     name: Option<String>,
+    material: Option<Uuid>,
 }
 
 impl IngredientItem {
@@ -22,9 +23,21 @@ impl IngredientItem {
     pub fn set_name(&mut self, name: &str) {
         self.name = Some(name.to_string());
     }
+
+    pub fn get_material(&self) -> Option<&Uuid> {
+        self.material.as_ref()
+    }
+
+    pub fn set_material(&mut self, id: &Uuid) {
+        self.material = Some(*id);
+    }
 }
 
 impl Item for IngredientItem {
+    fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
+        <Self as NodeItem>::delete(id, persistent_data)
+    }
+
     fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
         registry.ingredients.iter().map(|(uuid, ingredient)| {
             (uuid, ingredient.get_name())
@@ -32,12 +45,9 @@ impl Item for IngredientItem {
     }
 }
 
-impl ItemInternals for IngredientItem {
-    
-}
+impl ItemInternals for IngredientItem {}
 
-impl NodeItem for IngredientItem {
-}
+impl NodeItem for IngredientItem {}
 
 impl ItemAssociatedTypes for IngredientItem {
     type Resolver = IngredientResolver;
