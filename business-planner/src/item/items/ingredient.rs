@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::{self, Display}};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{data::IngredientData, graphs::{Graph, Graphs, Recipe}, item::{Item, ItemAssociatedTypes, ItemObject, NodeItem, Registry, items::{ItemInternals, NodeItemInternals}}, resolver::IngredientResolver, session::PersistentData};
+use crate::{data::IngredientData, graphs::{Graph, Graphs, Recipe}, item::{Item, ItemAssociatedTypes, ItemObject, MaterialItem, NodeItem, Registry, items::{ItemInternals, NodeItemInternals}}, resolver::IngredientResolver, session::PersistentData};
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct IngredientItem {
@@ -28,12 +28,30 @@ impl IngredientItem {
         self.material.as_ref()
     }
 
-    pub fn set_material(&mut self, id: &Uuid) {
-        self.material = Some(*id);
+    pub fn set_material(&mut self, id: Option<&Uuid>) {
+        self.material = id.cloned();
     }
 }
 
 impl Item for IngredientItem {
+    fn update(id: &Uuid, registry: &mut Registry, item: Self) {
+        let material = item.get_material().cloned();
+        let previous_ingredient = Self::get_item_registry_mut(registry).insert(*id, item);
+
+        #[allow(clippy::collapsible_if)] // because more fields will be added in the future
+        if let Some(previous_ingredient) = previous_ingredient {
+            if
+                let Some(previous_material) = previous_ingredient.get_material() &&
+                let Some(material) = material &&
+                previous_material != &material
+            {
+                if let Some(material) = MaterialItem::get_item_registry_mut(registry).get_mut(previous_material) {
+                    material.remove_associated_ingredient(id);
+                }
+            }
+        }
+    }
+    
     fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
         <Self as NodeItem>::delete(id, persistent_data)
     }

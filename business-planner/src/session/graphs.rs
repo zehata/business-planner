@@ -1,7 +1,5 @@
 use uuid::Uuid;
-use crate::{error::Error, graphs::{Graph, Graphs, GraphsError}, item::{EdgeItem, NodeItem}};
-
-use super::Session;
+use crate::{error::Error, graphs::{Graph, Graphs, GraphsError}, item::{EdgeItem, NodeItem}, session::Session};
 
 impl Session {
     pub fn create_graph<T: Graph>(&mut self) -> Uuid {

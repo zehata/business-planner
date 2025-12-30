@@ -1,9 +1,7 @@
 use std::{fs::File, path::{self, Path, PathBuf}};
 
-use crate::{resolver::Resolver, session::error::{LoadSessionError, SaveSessionError}};
+use crate::{resolver::Resolver, session::{Session, error::{LoadSessionError, SaveSessionError}}};
 use ciborium::{cbor, from_reader, into_writer};
-
-use super::Session;
 
 impl Session {
     pub fn create_session() -> Self {

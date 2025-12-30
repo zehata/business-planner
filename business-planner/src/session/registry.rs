@@ -1,8 +1,6 @@
 
-use crate::item::Item;
+use crate::{item::Item, session::Session};
 use uuid::Uuid;
-
-use super::Session;
 
 impl Session {
     pub fn create<T: Item>(&mut self, item: T) -> Uuid {

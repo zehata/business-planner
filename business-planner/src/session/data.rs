@@ -1,8 +1,6 @@
 use uuid::Uuid;
 
-use crate::{error::Error, io::error::{IoError, ReadError}, item::NodeItem};
-
-use super::Session;
+use crate::{error::Error, io::error::{IoError, ReadError}, item::NodeItem, session::Session};
 
 impl Session {
     pub fn resolve<I: NodeItem>(&mut self, id: &Uuid) -> Result<&I::Data, Error> {

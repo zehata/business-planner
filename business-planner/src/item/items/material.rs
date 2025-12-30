@@ -1,12 +1,13 @@
-use std::{collections::HashMap, fmt};
+use std::{collections::{HashMap, HashSet}, fmt};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{data::MaterialData, item::{Item, ItemAssociatedTypes, ItemObject, Registry, items::ItemInternals}, resolver::MaterialResolver, session::PersistentData};
 
-#[derive(Serialize, Deserialize, Hash, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct MaterialItem {
-    name: Option<String>
+    name: Option<String>,
+    associated_ingredients: HashSet<Uuid>,
 }
 
 impl MaterialItem {
@@ -20,6 +21,14 @@ impl MaterialItem {
 
     pub fn set_name(&mut self, name: &str) {
         self.name = Some(name.to_string());
+    }
+
+    pub fn add_associated_ingredient(&mut self, id: &Uuid) {
+        self.associated_ingredients.insert(*id);
+    }
+
+    pub fn remove_associated_ingredient(&mut self, id: &Uuid) {
+        self.associated_ingredients.remove(id);
     }
 }
 
@@ -43,8 +52,15 @@ impl ItemInternals for MaterialItem {}
 impl Item for MaterialItem {
     fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
         let registry = persistent_data.get_registry_mut();
-        // registry.ingredients
-        registry.materials.remove(id)
+        let material = registry.materials.remove(id);
+        if let Some(material) = &material {
+            let _ = material.associated_ingredients.iter().map(|id| {
+                if let Some(ingredient) = registry.ingredients.get_mut(id) {
+                    ingredient.set_material(None);
+                }
+            });
+        };
+        material
     }
     
     fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {

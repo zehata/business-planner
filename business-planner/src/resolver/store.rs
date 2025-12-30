@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 
 use uuid::Uuid;
 
-use crate::{data::StoreData, io::{error::ReadError, excel::{create_vec_from_cells, read_once}}, item::{DataSource, StoreItem}, resolver::ItemResolver};
+use crate::{data::StoreData, io::{error::ReadError, excel::{create_vec_from_cells, read_once}}, item::{DataSource, StoreItem}, resolver::{ItemResolver, Resolver}};
 
 #[derive(Debug, Default)]
 pub struct StoreResolver {
@@ -13,7 +13,7 @@ impl ItemResolver for StoreResolver {
     type ItemObject = StoreItem;
     type Data = StoreData;
 
-    fn resolve<'a>(resolver: &'a mut super::Resolver, id: &Uuid, registry_item: &Self::ItemObject) -> Result<&'a Self::Data, ReadError> {
+    fn resolve<'a>(resolver: &'a mut Resolver, id: &Uuid, registry_item: &Self::ItemObject) -> Result<&'a Self::Data, ReadError> {
         let resolver: Result<&mut StoreResolver, ReadError> = match resolver.stores.entry(*id) {
             Entry::Occupied(entry) => {
                 Ok(entry.into_mut())
