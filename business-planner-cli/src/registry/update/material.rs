@@ -19,18 +19,8 @@ pub fn get_update_material_subcommand() -> Command {
         )
 }
 
-pub fn get_material_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut MaterialItem> {
-    session.get::<MaterialItem>(uuid)
-}
-
-pub fn select_material<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut MaterialItem> {
-    if
-        let Some(uuid) = arg_matches.get_one::<String>("by_id") &&
-        let Ok(uuid) = Uuid::parse_str(uuid)
-    {
-        return get_material_by_uuid(session, &uuid)
-    }
-    None
+pub fn get_material_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a MaterialItem> {
+    session.read::<MaterialItem>(uuid)
 }
 
 pub fn get_update_material_interactive_subcommand(session: &mut Session) -> Vec<String> {
@@ -38,7 +28,8 @@ pub fn get_update_material_interactive_subcommand(session: &mut Session) -> Vec<
 }
 
 pub async fn parse_update_material_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let material = session.get::<MaterialItem>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
+    let id = Uuid::parse_str(command)?;
+    let mut material = session.read::<MaterialItem>(&id).ok_or(Error::InvalidInput)?.to_owned();
 
     let unchanged_name_hint = match material.get_name() {
         Some(name) => &format!("({})", name),
@@ -51,15 +42,21 @@ pub async fn parse_update_material_interactive_subcommand(command: &str, session
         material.set_name(&name);
     }
 
+    session.update(&id, material);
+
     Ok(NonError::Continue)
 }
 
 pub async fn parse_update_material_non_interactive_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let material = select_material(session, arg_matches).ok_or(Error::InvalidInput)?;
+    let string = arg_matches.get_one::<String>("by_id").ok_or(Error::InvalidInput)?;
+    let id = Uuid::parse_str(string)?;
+    let mut material = get_material_by_uuid(session, &id).ok_or(Error::InvalidInput)?.to_owned();
 
     if let Some(name) = arg_matches.get_one::<String>("name") {
         material.set_name(name);
     };
+
+    session.update(&id, material);
 
     Ok(NonError::Continue)
 }

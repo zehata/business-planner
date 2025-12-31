@@ -8,6 +8,7 @@ use crate::{data::StoreData, graphs::{Graph, Graphs, ProductionLine}, item::{Dat
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct StoreItem {
     name: Option<String>,
+    material: Option<Uuid>,
     timestamps: Option<DataSource>,
     // stock_levels: Option<DataSource>,
 }
@@ -23,6 +24,14 @@ impl StoreItem {
 
     pub fn set_name(&mut self, name: &str) {
         self.name = Some(name.to_string());
+    }
+
+    pub fn get_material(&self) -> Option<&Uuid> {
+        self.material.as_ref()
+    }
+
+    pub fn set_material(&mut self, id: Option<&Uuid>) {
+        self.material = id.cloned();
     }
 
     pub fn get_timestamps_range(&self) -> Option<&DataSource> {

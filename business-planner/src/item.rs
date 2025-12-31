@@ -46,10 +46,6 @@ impl Registry {
         T::read(id, self)
     }
 
-    pub fn get<T: Item>(&mut self, id: &Uuid) -> Option<&mut T> {
-        T::get(id, self)
-    }
-
     pub fn update<T: Item>(&mut self, id: &Uuid, item: T) {
         T::update(id, self, item)
     }

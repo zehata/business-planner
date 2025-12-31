@@ -24,10 +24,6 @@ pub trait Item: ItemInternals {
         Self::get_item_registry(registry).get(id)
     }
 
-    fn get<'a>(id: &Uuid, registry: &'a mut Registry) -> Option<&'a mut Self> {
-        Self::get_item_registry_mut(registry).get_mut(id)
-    }
-
     fn update(id: &Uuid, registry: &mut Registry, item: Self) {
         Self::get_item_registry_mut(registry).insert(*id, item);
     }

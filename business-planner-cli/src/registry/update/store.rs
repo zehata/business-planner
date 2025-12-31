@@ -64,15 +64,8 @@ pub fn get_update_store_subcommand() -> Command {
         )
 }
 
-pub fn get_store_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a mut StoreItem> {
-    session.get::<StoreItem>(uuid)
-}
-
-pub fn select_store<'a>(session: &'a mut Session, arg_matches: &ArgMatches) -> Option<&'a mut StoreItem> {
-    if let Some(uuid) = arg_matches.get_one::<String>("by_id") && let Ok(uuid) = Uuid::parse_str(uuid) {
-        return get_store_by_uuid(session, &uuid)
-    }
-    None
+pub fn get_store_by_uuid<'a>(session: &'a mut Session, uuid: &Uuid) -> Option<&'a StoreItem> {
+    session.read::<StoreItem>(uuid)
 }
 
 pub fn get_update_store_interactive_subcommand(session: &mut Session) -> Vec<String> {
@@ -107,7 +100,8 @@ pub async fn prompt_populate_excel_data_source(excel_data_source: &mut ExcelData
 }
 
 pub async fn parse_update_store_interactive_subcommand(command: &str, session: &mut Session) -> Result<NonError, Error> {
-    let store = session.get::<StoreItem>(&Uuid::parse_str(command)?).ok_or(Error::InvalidInput)?;
+    let id = Uuid::parse_str(command)?;
+    let mut store = session.read::<StoreItem>(&id).ok_or(Error::InvalidInput)?.to_owned();
 
     let unchanged_name_hint = match store.get_name() {
         Some(name) => &format!("({})", name),
@@ -142,11 +136,15 @@ pub async fn parse_update_store_interactive_subcommand(command: &str, session: &
         _ => return Err(Error::InvalidInput),
     }
 
+    session.update(&id, store);
+
     Ok(NonError::Continue)
 }
 
 pub async fn parse_update_store_non_interactive_subcommand(arg_matches: &ArgMatches, session: &mut Session) -> Result<NonError, Error> {
-    let store = select_store(session, arg_matches).ok_or(Error::InvalidInput)?;
+    let string = arg_matches.get_one::<String>("by_id").ok_or(Error::InvalidInput)?;
+    let id = Uuid::parse_str(string)?;
+    let mut store = get_store_by_uuid(session, &id).ok_or(Error::InvalidInput)?.to_owned();
 
     if let Some(name) = arg_matches.get_one::<String>("name") {
         store.set_name(name);
@@ -202,6 +200,8 @@ pub async fn parse_update_store_non_interactive_subcommand(arg_matches: &ArgMatc
             _ => return Err(Error::InvalidInput)
         }
     }
+
+    session.update(&id, store);
 
     Ok(NonError::Continue)
 }

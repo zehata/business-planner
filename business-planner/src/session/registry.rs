@@ -15,10 +15,6 @@ impl Session {
         self.persistent_data.registry.read::<T>(id)
     }
 
-    pub fn get<T: Item>(&mut self, id: &Uuid) -> Option<&mut T> {
-        self.persistent_data.registry.get::<T>(id)
-    }
-
     pub fn update<T: Item>(&mut self, id: &Uuid, item: T) {
         self.persistent_data.registry.update::<T>(id, item)
     }
