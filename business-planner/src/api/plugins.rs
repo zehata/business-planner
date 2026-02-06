@@ -4,7 +4,7 @@ use crate::plugins::{self, PluginProcess};
 
 use crate::api::error::BusinessPlannerError;
 
-pub use crate::plugins::{Plugin, PluginResponse, DataRequest, DataResponse};
+pub use crate::plugins::{DataRequest, DataResponse, Plugin, PluginResponse};
 
 pub fn list_plugins() -> Result<Vec<String>, BusinessPlannerError> {
     Ok(plugins::list_plugins()?)

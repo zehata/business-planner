@@ -1,24 +1,33 @@
 use crate::{data::Value, io::excel::error::ExcelError};
-use std::path::PathBuf;
 use calamine::{Cells, Data as CalamineData, Range, Reader, Xlsx, open_workbook};
 use regex::Regex;
+use std::path::PathBuf;
 
 pub mod error;
 
 pub fn convert_column_str_to_index(column_str: &str) -> Result<u32, ExcelError> {
-    let column_number = column_str.as_bytes().iter().enumerate().try_fold(0, |acc, (_, char)| {
-        let num = *char as u32;
-        
-        if !(65..=90).contains(&num) {
-            return Err(ExcelError::InvalidRange)
-        }
-        
-        Ok(acc*26 + (num - 64))
-    })?;
+    let column_number =
+        column_str
+            .as_bytes()
+            .iter()
+            .enumerate()
+            .try_fold(0, |acc, (_, char)| {
+                let num = *char as u32;
+
+                if !(65..=90).contains(&num) {
+                    return Err(ExcelError::InvalidRange);
+                }
+
+                Ok(acc * 26 + (num - 64))
+            })?;
     Ok(column_number - 1)
 }
 
-pub fn read_once(spreadsheet_path: &PathBuf, sheet: &str, range: &str) -> Result<Range<CalamineData>, ExcelError> {
+pub fn read_once(
+    spreadsheet_path: &PathBuf,
+    sheet: &str,
+    range: &str,
+) -> Result<Range<CalamineData>, ExcelError> {
     let mut book: Xlsx<_> = open_workbook(spreadsheet_path)?;
     let sheet: Range<CalamineData> = book.worksheet_range(sheet)?;
 
@@ -31,7 +40,9 @@ pub fn read_once(spreadsheet_path: &PathBuf, sheet: &str, range: &str) -> Result
     };
     let range_start_row = match &captures["range_start_row"] {
         "" => None,
-        range_start_row => Some(str::parse::<u32>(range_start_row).expect("Regex to only match digits")-1),
+        range_start_row => {
+            Some(str::parse::<u32>(range_start_row).expect("Regex to only match digits") - 1)
+        }
     };
 
     let range_end_column = match &captures["range_end_column"] {
@@ -40,10 +51,17 @@ pub fn read_once(spreadsheet_path: &PathBuf, sheet: &str, range: &str) -> Result
     };
     let range_end_row = match &captures["range_end_row"] {
         "" => None,
-        range_end_row => Some(str::parse::<u32>(range_end_row).expect("Regex to only match digits")-1),
+        range_end_row => {
+            Some(str::parse::<u32>(range_end_row).expect("Regex to only match digits") - 1)
+        }
     };
 
-    let range = match (range_start_column, range_start_row, range_end_column, range_end_row) {
+    let range = match (
+        range_start_column,
+        range_start_row,
+        range_end_column,
+        range_end_row,
+    ) {
         (None, None, _, _) => return Err(ExcelError::InvalidRange),
         (None, _, _, None) => return Err(ExcelError::InvalidRange),
         (_, None, None, _) => return Err(ExcelError::InvalidRange),
@@ -51,44 +69,76 @@ pub fn read_once(spreadsheet_path: &PathBuf, sheet: &str, range: &str) -> Result
         (Some(_), None, Some(_), Some(_)) => return Err(ExcelError::InvalidRange),
         (Some(range_start_column), Some(range_start_row), None, None) => {
             // B2 => single cell
-            sheet.range((range_start_row, range_start_column), (range_start_row, range_start_column))
-        },
+            sheet.range(
+                (range_start_row, range_start_column),
+                (range_start_row, range_start_column),
+            )
+        }
         (Some(range_start_column), range_start_row, Some(range_end_column), None) => {
             let range_start_row = range_start_row.unwrap_or(0);
             let range_end_row = sheet.end().ok_or(ExcelError::InvalidRange)?.0;
-            let range = sheet.range((range_start_row, range_start_column), (range_end_row, range_end_column));
-            let last_used_row = range.used_cells().next_back().ok_or(ExcelError::InvalidRange)?.0 as u32;
-            sheet.range((range_start_row, range_start_column), (last_used_row, range_end_column))
-        },
+            let range = sheet.range(
+                (range_start_row, range_start_column),
+                (range_end_row, range_end_column),
+            );
+            let last_used_row = range
+                .used_cells()
+                .next_back()
+                .ok_or(ExcelError::InvalidRange)?
+                .0 as u32;
+            sheet.range(
+                (range_start_row, range_start_column),
+                (last_used_row, range_end_column),
+            )
+        }
         (range_start_column, Some(range_start_row), None, Some(range_end_row)) => {
             let range_start_column = range_start_column.unwrap_or(0);
             let range_end_column = sheet.end().ok_or(ExcelError::InvalidRange)?.1;
-            let range = sheet.range((range_start_row, range_start_column), (range_end_row, range_end_column));
-            let last_used_column = range.used_cells().next_back().ok_or(ExcelError::InvalidRange)?.1 as u32;
-            sheet.range((range_start_row, range_start_column), (range_end_row, last_used_column))
-        },
-        (Some(range_start_column), Some(range_start_row), Some(range_end_column), Some(range_end_row)) => {
+            let range = sheet.range(
+                (range_start_row, range_start_column),
+                (range_end_row, range_end_column),
+            );
+            let last_used_column = range
+                .used_cells()
+                .next_back()
+                .ok_or(ExcelError::InvalidRange)?
+                .1 as u32;
+            sheet.range(
+                (range_start_row, range_start_column),
+                (range_end_row, last_used_column),
+            )
+        }
+        (
+            Some(range_start_column),
+            Some(range_start_row),
+            Some(range_end_column),
+            Some(range_end_row),
+        ) => {
             // B2:B4 => range from B2:N4
-            sheet.range((range_start_row, range_start_column), (range_end_row, range_end_column))
-        },
+            sheet.range(
+                (range_start_row, range_start_column),
+                (range_end_row, range_end_column),
+            )
+        }
     };
     Ok(range)
 }
 
 pub fn create_vec_from_cells(cells: Cells<'_, CalamineData>) -> Result<Vec<Value>, ExcelError> {
-    let values = cells.into_iter().map(|(_row, _column, data)| {
-        match data {
+    let values = cells
+        .into_iter()
+        .map(|(_row, _column, data)| match data {
             CalamineData::Int(value) => Value::Int64(*value),
             CalamineData::Float(value) => Value::Float64(*value),
             CalamineData::String(value) => Value::String(value.clone()),
             CalamineData::Bool(value) => Value::Boolean(*value),
-            CalamineData::DateTime(value) => todo!(),
-            CalamineData::DateTimeIso(value) => todo!(),
+            CalamineData::DateTime(_value) => todo!(),
+            CalamineData::DateTimeIso(_value) => todo!(),
             CalamineData::DurationIso(_) => todo!(),
-            CalamineData::Error(cell_error_type) => todo!(),
+            CalamineData::Error(_cell_error_type) => todo!(),
             CalamineData::Empty => Value::Null,
-        }
-    }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
     Ok(values)
 }
 
@@ -100,7 +150,7 @@ mod tests {
     fn test_range_parser() {
         let mut book: Xlsx<_> = open_workbook("./samples/offset_excel.xlsx").unwrap();
         let sheet = book.worksheet_range("Sheet1").unwrap();
-        let mut range = sheet.range((0,2), (5,2));
+        let mut range = sheet.range((0, 2), (5, 2));
         range = range.range((0, 2), (5, 2));
         println!("{}, {}", range.width(), range.height());
         println!("{:?}", range);

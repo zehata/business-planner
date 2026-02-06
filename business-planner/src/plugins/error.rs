@@ -1,5 +1,5 @@
-use std::io::Error as IoError;
 use std::ffi::NulError;
+use std::io::Error as IoError;
 use trash::Error as TrashError;
 
 #[derive(Debug)]

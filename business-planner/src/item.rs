@@ -1,23 +1,27 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{data::Data, resolver::ItemResolver};
 
-mod items;
 mod edge_items;
+mod items;
 
 mod data_source;
 
-pub use {items::{Item, NodeItem, IngredientItem, StoreItem, MaterialItem}, edge_items::{EdgeItem, TransferItem, RequirementItem}, data_source::{DataSource, ExcelDataSource, PostgresqlDataSource}};
+pub use {
+    data_source::{DataSource, ExcelDataSource, PostgresqlDataSource},
+    edge_items::{EdgeItem, RequirementItem, TransferItem},
+    items::{IngredientItem, Item, MaterialItem, NodeItem, StoreItem},
+};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Registry {
     materials: HashMap<Uuid, MaterialItem>,
     ingredients: HashMap<Uuid, IngredientItem>,
     requirements: HashMap<Uuid, RequirementItem>,
-    
+
     stores: HashMap<Uuid, StoreItem>,
     transfers: HashMap<Uuid, TransferItem>,
 }
@@ -50,11 +54,7 @@ impl Registry {
         T::update(id, self, item)
     }
 
-    pub fn list<T: Item>(&self) -> Vec<String> {
+    pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
         T::list(self)
-    }
-
-    pub fn list_names<T: Item>(&self) -> Vec<(&Uuid, Option<&str>)> {
-        T::list_names(self)
     }
 }

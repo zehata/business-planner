@@ -3,6 +3,7 @@ use std::{fmt, io::Error as IoError};
 use business_planner::api::error::BusinessPlannerError;
 pub use clap::Error as ClapError;
 pub use inquire::InquireError;
+pub use strum::ParseError;
 pub use uuid::Error as UuidError;
 
 pub enum NonError {
@@ -14,6 +15,7 @@ pub enum NonError {
 pub enum Error {
     IoError(IoError),
     InvalidInput,
+    ParseError(ParseError),
     UserCancelled,
     BusinessPlannerError(BusinessPlannerError),
     ClapError(ClapError),
@@ -26,9 +28,12 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::IoError(error) => write!(f, "{}", error),
+            Error::ParseError(_) => write!(f, "Input is invalid"),
             Error::InvalidInput => write!(f, "Input is invalid"),
             Error::UserCancelled => write!(f, "Cancelled"),
-            Error::BusinessPlannerError(business_planner_error) => write!(f, "{}", business_planner_error),
+            Error::BusinessPlannerError(business_planner_error) => {
+                write!(f, "{}", business_planner_error)
+            }
             Error::ClapError(clap_error) => write!(f, "{clap_error}"),
             Error::InquireError(inquire_error) => write!(f, "{inquire_error}"),
             Error::UuidError(uuid_error) => write!(f, "{uuid_error}"),
@@ -40,6 +45,12 @@ impl fmt::Display for Error {
 impl From<IoError> for Error {
     fn from(value: IoError) -> Self {
         Error::IoError(value)
+    }
+}
+
+impl From<ParseError> for Error {
+    fn from(value: ParseError) -> Self {
+        Error::ParseError(value)
     }
 }
 

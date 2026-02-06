@@ -1,9 +1,20 @@
-use std::{collections::HashMap, fmt::{self, Display}};
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{data::TransferData, graphs::ProductionLine, item::{DataSource, ItemAssociatedTypes, ItemObject, Registry, edge_items::{EdgeItem, EdgeItemInternals}}, resolver::TransferResolver};
+use crate::{
+    data::TransferData,
+    graphs::ProductionLine,
+    item::{
+        DataSource, ItemAssociatedTypes, ItemObject, Registry,
+        edge_items::{EdgeItem, EdgeItemInternals},
+    },
+    resolver::TransferResolver,
+};
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct TransferItem {
@@ -12,11 +23,9 @@ pub struct TransferItem {
     // stock_levels: Option<DataSource>,
 }
 
-impl TransferItem {
-}
+impl TransferItem {}
 
-impl EdgeItem for TransferItem {
-}
+impl EdgeItem for TransferItem {}
 
 impl ItemAssociatedTypes for TransferItem {
     type Resolver = TransferResolver;

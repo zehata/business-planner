@@ -5,17 +5,18 @@ use crate::io::error::ReadError;
 pub async fn read(pool: sqlx::Pool<Postgres>) -> Result<String, ReadError> {
     let row: (i64,) = sqlx::query_as("SELECT $1")
         .bind(100_i64)
-        .fetch_one(&pool).await?;
+        .fetch_one(&pool)
+        .await?;
     Ok(row.0.to_string())
 }
 
 #[cfg(test)]
 mod tests {
-    use pgtemp::{PgTempDBBuilder};
+    use pgtemp::PgTempDBBuilder;
     use sqlx::postgres::PgPoolOptions;
 
     use super::*;
-    
+
     #[tokio::test]
     async fn test_psql_reader() {
         let builder = PgTempDBBuilder::default().with_bin_path("/usr/lib/postgresql/16/bin");

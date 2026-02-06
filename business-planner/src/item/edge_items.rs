@@ -1,11 +1,14 @@
 use uuid::Uuid;
 
-mod transfer;
 mod requirement;
+mod transfer;
 
-use crate::{graphs::Graph, item::{ItemObject, Registry}};
+use crate::{
+    graphs::Graph,
+    item::{ItemObject, Registry},
+};
 
-pub use {transfer::TransferItem, requirement::RequirementItem};
+pub use {requirement::RequirementItem, transfer::TransferItem};
 
 #[allow(private_bounds)]
 pub trait EdgeItem: EdgeItemInternals {

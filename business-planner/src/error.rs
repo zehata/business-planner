@@ -1,6 +1,11 @@
 use std::{fmt, string::FromUtf8Error};
 
-use crate::{session::{LoadSessionError, SaveSessionError}, io::error::IoError, plugins::error::{PluginManagementError, PluginError}, graphs::GraphsError};
+use crate::{
+    graphs::GraphsError,
+    io::error::IoError,
+    plugins::error::{PluginError, PluginManagementError},
+    session::{LoadSessionError, SaveSessionError},
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -16,11 +21,22 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
-            Error::PluginManagementError(error) => format!("While looking for plugins, encountered this error: {:?}", error),
-            Error::PluginError(error) => format!("While running plugin, encountered this error: {:?}", error),
-            Error::SaveSessionError(error) => format!("While saving the session, encountered this error: {:?}", error),
-            Error::LoadSessionError(error) => format!("While loading the session from file, encountered this error: {:?}", error),
-            _ => dbg!(self).to_string()
+            Error::PluginManagementError(error) => format!(
+                "While looking for plugins, encountered this error: {:?}",
+                error
+            ),
+            Error::PluginError(error) => {
+                format!("While running plugin, encountered this error: {:?}", error)
+            }
+            Error::SaveSessionError(error) => format!(
+                "While saving the session, encountered this error: {:?}",
+                error
+            ),
+            Error::LoadSessionError(error) => format!(
+                "While loading the session from file, encountered this error: {:?}",
+                error
+            ),
+            _ => dbg!(self).to_string(),
         };
         write!(f, "{message}")
     }

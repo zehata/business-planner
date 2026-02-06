@@ -1,6 +1,15 @@
-use std::{fs::File, path::{self, Path, PathBuf}};
+use std::{
+    fs::File,
+    path::{self, Path, PathBuf},
+};
 
-use crate::{resolver::Resolver, session::{Session, error::{LoadSessionError, SaveSessionError}}};
+use crate::{
+    resolver::Resolver,
+    session::{
+        Session,
+        error::{LoadSessionError, SaveSessionError},
+    },
+};
 use ciborium::{cbor, from_reader, into_writer};
 
 impl Session {
@@ -10,7 +19,7 @@ impl Session {
 
     pub fn load_session(path: &PathBuf) -> Result<Self, LoadSessionError> {
         let file = File::open(path)?;
-        let persistent_data = from_reader(file)?; 
+        let persistent_data = from_reader(file)?;
         let path = path::absolute(path).ok();
         Ok(Session {
             last_save_location: path,
@@ -28,13 +37,13 @@ impl Session {
 
     pub fn save_to_location(&self, path: &Path, overwrite: bool) -> Result<(), SaveSessionError> {
         if path.exists() && !overwrite {
-            return Err(SaveSessionError::FileExists)
+            return Err(SaveSessionError::FileExists);
         }
 
         let cbor_value = cbor!(self.persistent_data)?;
         let file = File::create(path)?;
         into_writer(&cbor_value, file)?;
-        
+
         Ok(())
     }
 }

@@ -1,8 +1,8 @@
-#[cfg(feature = "csv")]
-use csv::{Error as CsvError};
-#[cfg(feature = "postgres")]
-use sqlx::{Error as SqlxError};
 use crate::io::excel::error::ExcelError;
+#[cfg(feature = "csv")]
+use csv::Error as CsvError;
+#[cfg(feature = "postgres")]
+use sqlx::Error as SqlxError;
 
 #[derive(Debug)]
 pub enum IoError {

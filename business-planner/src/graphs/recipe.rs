@@ -4,16 +4,32 @@ use petgraph::prelude::DiGraphMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{graphs::{Graph, Graphs}, item::{IngredientItem, RequirementItem}};
+use crate::{
+    graphs::{Graph, GraphData, Graphs},
+    item::{IngredientItem, RequirementItem},
+};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Recipe {
+    data: GraphData,
     graph: DiGraphMap<Uuid, Uuid>,
 }
 
 impl Graph for Recipe {
     type Node = IngredientItem;
     type Edge = RequirementItem;
+
+    fn get_name(&self) -> &str {
+        &self.data.name
+    }
+
+    fn get_data(&self) -> &GraphData {
+        &self.data
+    }
+
+    fn set_data(&mut self, data: GraphData) {
+        self.data = data
+    }
 
     fn get_graphs(graphs: &Graphs) -> &HashMap<Uuid, Self> {
         &graphs.recipes

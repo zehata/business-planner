@@ -1,8 +1,16 @@
-use std::{collections::{HashMap, HashSet}, fmt};
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt,
+};
 use uuid::Uuid;
 
-use crate::{data::MaterialData, item::{Item, ItemAssociatedTypes, ItemObject, Registry, items::ItemInternals}, resolver::MaterialResolver, session::PersistentData};
+use crate::{
+    data::MaterialData,
+    item::{Item, ItemAssociatedTypes, ItemObject, Registry, items::ItemInternals},
+    resolver::MaterialResolver,
+    session::PersistentData,
+};
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct MaterialItem {
@@ -23,11 +31,11 @@ impl MaterialItem {
         self.name = Some(name.to_string());
     }
 
-    pub fn add_associated_ingredient(&mut self, id: &Uuid) {
+    pub(crate) fn add_associated_ingredient(&mut self, id: &Uuid) {
         self.associated_ingredients.insert(*id);
     }
 
-    pub fn remove_associated_ingredient(&mut self, id: &Uuid) {
+    pub(crate) fn remove_associated_ingredient(&mut self, id: &Uuid) {
         self.associated_ingredients.remove(id);
     }
 }
@@ -62,11 +70,12 @@ impl Item for MaterialItem {
         };
         material
     }
-    
-    fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)> {
-        registry.materials.iter().map(|(uuid, material)| {
-            (uuid, material.get_name())
-        }).collect()
+
+    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
+        registry
+            .materials
+            .iter()
+            .map(|(uuid, material)| (uuid, material.get_name()))
     }
 }
 

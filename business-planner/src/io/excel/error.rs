@@ -1,5 +1,5 @@
-use polars::error::PolarsError;
 use calamine::XlsxError;
+use polars::error::PolarsError;
 
 #[derive(Debug)]
 pub enum ExcelError {

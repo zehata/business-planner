@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::{HashMap, hash_map::Entry}, fmt::Display};
 
 use petgraph::prelude::DiGraphMap;
 use serde::{Deserialize, Serialize};
@@ -6,11 +6,26 @@ use uuid::Uuid;
 
 use crate::item::{EdgeItem, Item};
 
+mod error;
 mod production_line;
 mod recipe;
-mod error;
 
-pub use {production_line::ProductionLine, recipe::Recipe, error::GraphsError};
+pub use {
+    error::{GraphObjectMissing, GraphsError},
+    production_line::ProductionLine,
+    recipe::Recipe,
+};
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct GraphData {
+    name: String,
+}
+
+impl Display for GraphData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.name)
+    }
+}
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Graphs {
@@ -25,17 +40,29 @@ impl Graphs {
         uuid
     }
 
-    pub fn get<T: Graph>(&self, id: &Uuid) -> Option<&T> {
-        T::get_graphs(self).get(id)
+    pub fn read<'a, T: Graph + 'a>(&'a self, id: &Uuid) -> Option<&'a GraphData> {
+        Some(T::get_graphs(self).get(id)?.get_data())
+    }
+
+    pub fn update<T: Graph>(&mut self, id: &Uuid, data: GraphData) {
+        let entry = match T::get_graphs_mut(self).entry(*id) {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => entry.insert(T::new()),
+        };
+
+        entry.set_data(data);
     }
 
     pub fn get_mut<T: Graph>(&mut self, id: &Uuid) -> Option<&mut T> {
         T::get_graphs_mut(self).get_mut(id)
     }
 
-    pub fn delete<T: Graph>(&mut self, id: &Uuid) -> Result<(), GraphsError> {
-        T::get_graphs_mut(self).remove(id).ok_or(GraphsError::NoGraphWithId)?;
-        Ok(())
+    pub fn delete<T: Graph>(&mut self, id: &Uuid) -> Option<T> {
+        T::get_graphs_mut(self).remove(id)
+    }
+
+    pub fn list<'a, T: Graph + 'a>(&'a self) -> impl Iterator<Item = (&'a Uuid, &'a T)> {
+        T::get_graphs(self).iter()
     }
 }
 
@@ -46,6 +73,12 @@ pub trait Graph: Sized + Default {
     fn new() -> Self {
         Self::default()
     }
+
+    fn get_name(&self) -> &str;
+
+    fn get_data(&self) -> &GraphData;
+
+    fn set_data(&mut self, data: GraphData);
 
     fn get_graphs(graphs: &Graphs) -> &HashMap<Uuid, Self>;
 
@@ -61,19 +94,27 @@ pub trait Graph: Sized + Default {
 
     fn remove_node(&mut self, node_id: &Uuid) -> Result<(), GraphsError> {
         let node_exists = self.get_graph_map_mut().remove_node(*node_id);
-        if !node_exists{
-            return Err(GraphsError::NoNodeWithId)
+        if !node_exists {
+            return Err(GraphObjectMissing::Node)?;
         }
         Ok(())
     }
 
-    fn add_edge(&mut self, edge_id: &Uuid, from_node_id: &Uuid, to_node_id: &Uuid) -> Result<(), GraphsError> {
-        self.get_graph_map_mut().add_edge(*from_node_id, *to_node_id, *edge_id);
+    fn add_edge(
+        &mut self,
+        edge_id: &Uuid,
+        from_node_id: &Uuid,
+        to_node_id: &Uuid,
+    ) -> Result<(), GraphsError> {
+        self.get_graph_map_mut()
+            .add_edge(*from_node_id, *to_node_id, *edge_id);
         Ok(())
     }
-    
+
     fn remove_edge(&mut self, from_node_id: &Uuid, to_node_id: &Uuid) -> Result<(), GraphsError> {
-        self.get_graph_map_mut().remove_edge(*from_node_id, *to_node_id).ok_or(GraphsError::NoEdgeWithId)?;
+        self.get_graph_map_mut()
+            .remove_edge(*from_node_id, *to_node_id)
+            .ok_or(GraphObjectMissing::Edge)?;
         Ok(())
     }
 }

@@ -1,4 +1,3 @@
-
 use crate::{item::Item, session::Session};
 use uuid::Uuid;
 
@@ -23,11 +22,7 @@ impl Session {
         self.persistent_data.delete::<T>(id);
     }
 
-    pub fn list<T: Item>(&self) -> Vec<String> {
+    pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
         self.persistent_data.registry.list::<T>()
-    }
-
-    pub fn list_names<T: Item>(&self) -> Vec<(&Uuid, Option<&str>)> {
-        self.persistent_data.registry.list_names::<T>()
     }
 }

@@ -1,7 +1,6 @@
-
 use serde::{Deserialize, Serialize};
 
-use crate::{data::{Data, Value}};
+use crate::data::{Data, Value};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct StoreData {
@@ -11,9 +10,7 @@ pub struct StoreData {
 
 impl StoreData {
     pub(crate) fn new(timestamps: Vec<Value>) -> StoreData {
-        StoreData {
-            timestamps,
-        }
+        StoreData { timestamps }
     }
 }
 

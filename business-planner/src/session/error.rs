@@ -1,5 +1,8 @@
+use ciborium::{
+    de::Error as CiboriumDeserError, ser::Error as CiboriumSerError,
+    value::Error as CiboriumValueError,
+};
 use std::{fmt, io::Error as IoError};
-use ciborium::{de::Error as CiboriumDeserError, ser::Error as CiboriumSerError, value::Error as CiboriumValueError};
 
 pub enum SaveSessionError {
     UndefinedSavePath,
@@ -7,15 +10,19 @@ pub enum SaveSessionError {
     WriteFileError(IoError),
     CiboriumAsBytesError,
     CiboriumSerializationError(CiboriumValueError),
-    CiboriumWriteError(CiboriumSerError<IoError>)
+    CiboriumWriteError(CiboriumSerError<IoError>),
 }
 
 impl fmt::Debug for SaveSessionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let error = match self {
             Self::UndefinedSavePath => "File was not previously saved at any location.".to_string(),
-            Self::FileExists => "File exists and overwrite flag is not set. Refusing to overwrite".to_string(),
-            Self::WriteFileError(error) => format!("Failed to write the session to file due to {:#?}", error),
+            Self::FileExists => {
+                "File exists and overwrite flag is not set. Refusing to overwrite".to_string()
+            }
+            Self::WriteFileError(error) => {
+                format!("Failed to write the session to file due to {:#?}", error)
+            }
             Self::CiboriumAsBytesError => "Could not convert Ciborium value to bytes".to_string(),
             Self::CiboriumSerializationError(error) => format!("{error}"),
             Self::CiboriumWriteError(error) => format!("{error}"),

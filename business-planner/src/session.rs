@@ -1,12 +1,16 @@
 use std::path::PathBuf;
 
-use crate::{graphs::Graphs, item::{Item, Registry}, resolver::Resolver};
+use crate::{
+    graphs::Graphs,
+    item::{Item, Registry},
+    resolver::Resolver,
+};
 use serde::{Deserialize, Serialize};
 
-mod error;
-mod registry;
 mod data;
+mod error;
 mod graphs;
+mod registry;
 mod save;
 
 pub use error::{LoadSessionError, SaveSessionError};

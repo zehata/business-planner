@@ -1,12 +1,16 @@
 use uuid::Uuid;
 
 mod ingredient;
-mod store;
 mod material;
+mod store;
 
-use crate::{graphs::Graphs, item::{ItemObject, Registry}, session::PersistentData};
+use crate::{
+    graphs::Graphs,
+    item::{ItemObject, Registry},
+    session::PersistentData,
+};
 
-pub use {ingredient::IngredientItem, store::StoreItem, material::MaterialItem};
+pub use {ingredient::IngredientItem, material::MaterialItem, store::StoreItem};
 
 #[allow(private_bounds)]
 pub trait Item: ItemInternals {
@@ -32,13 +36,7 @@ pub trait Item: ItemInternals {
         Self::get_item_registry_mut(persistent_data.get_registry_mut()).remove(id)
     }
 
-    fn list(registry: &Registry) -> Vec<String> {
-        Self::get_item_registry(registry).keys().map(|key| {
-            key.to_string()
-        }).collect()
-    }
-
-    fn list_names(registry: &Registry) -> Vec<(&Uuid, Option<&str>)>;
+    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, Option<&str>)>;
 }
 
 #[allow(private_bounds)]
@@ -49,8 +47,7 @@ pub trait NodeItem: Item + NodeItemInternals {
     }
 }
 
-pub(crate) trait ItemInternals: ItemObject {
-}
+pub(crate) trait ItemInternals: ItemObject {}
 
 pub(crate) trait NodeItemInternals: ItemObject {
     fn remove_from_graphs(id: &Uuid, graphs: &mut Graphs);
