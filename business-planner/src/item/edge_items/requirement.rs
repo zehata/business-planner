@@ -19,7 +19,11 @@ use crate::{
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct RequirementItem {}
 
-impl EdgeItem for RequirementItem {}
+impl EdgeItem for RequirementItem {
+    fn new() -> Self {
+        Self {  }
+    }
+}
 
 impl ItemAssociatedTypes for RequirementItem {
     type Resolver = RequirementResolver;

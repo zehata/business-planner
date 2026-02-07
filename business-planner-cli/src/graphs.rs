@@ -3,7 +3,7 @@ use enum_map::{Enum, enum_map};
 use strum_macros::{Display, EnumIter, EnumString};
 
 use crate::{
-    graphs::{create::CreateGraphMenu, delete::DeleteGraphMenu, list::ListGraphsMenu, read::ReadGraphMenu}, utils::Menu
+    graphs::{create::CreateGraphMenu, delete::DeleteGraphMenu, list::ListGraphsMenu, read::ReadGraphMenu, update::UpdateGraphMenu}, utils::Menu
 };
 
 mod create;
@@ -30,7 +30,7 @@ impl Menu for GraphsMenu {
         enum_map! {
             Self::Create => CreateGraphMenu::get_submenu(),
             Self::Read => ReadGraphMenu::get_submenu(),
-            Self::Update => todo!(),
+            Self::Update => UpdateGraphMenu::get_submenu(),
             Self::Delete => DeleteGraphMenu::get_submenu(),
             Self::List => ListGraphsMenu::get_submenu(),
         }

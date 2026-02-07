@@ -103,6 +103,18 @@ pub trait Menu: Display + EnumArray<Submenu> {
     }
 }
 
+pub fn prompt_select_command<T: Iterator<Item = U> + Clone, U: Display>(mut commands: T) -> Result<U, Error> {
+    let command_names = commands
+        .clone()
+        .map(|command| format!("{}", command))
+        .collect();
+    let selected_command = Select::new("Select", command_names)
+        .raw_prompt_skippable()?
+        .ok_or(Error::UserCancelled)?;
+    Ok(commands.nth(selected_command.index)
+        .expect("User cannot select if subcommands is empty"))
+}
+
 pub fn get_command_matches(buffer: &str, command: Command) -> Result<ArgMatches, Error> {
     let args = shlex::split(buffer).ok_or(Error::ErroneousShlexInput)?;
     let arg_matches = command.try_get_matches_from(args)?;

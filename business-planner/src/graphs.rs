@@ -4,7 +4,7 @@ use petgraph::prelude::DiGraphMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::item::{EdgeItem, Item};
+use crate::item::{EdgeItem, NodeItem};
 
 mod error;
 mod production_line;
@@ -16,9 +16,19 @@ pub use {
     recipe::Recipe,
 };
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GraphData {
     name: String,
+}
+
+impl GraphData {
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn set_name(&mut self, name: &str) {
+        self.name = name.to_string()
+    }
 }
 
 impl Display for GraphData {
@@ -67,14 +77,16 @@ impl Graphs {
 }
 
 pub trait Graph: Sized + Default {
-    type Node: Item;
+    type Node: NodeItem;
     type Edge: EdgeItem;
 
     fn new() -> Self {
         Self::default()
     }
 
-    fn get_name(&self) -> &str;
+    fn get_name(&self) -> &str {
+        self.get_data().get_name()
+    }
 
     fn get_data(&self) -> &GraphData;
 

@@ -25,7 +25,11 @@ pub struct TransferItem {
 
 impl TransferItem {}
 
-impl EdgeItem for TransferItem {}
+impl EdgeItem for TransferItem {
+    fn new() -> Self {
+        Self { name: None, timestamps: None }
+    }
+}
 
 impl ItemAssociatedTypes for TransferItem {
     type Resolver = TransferResolver;

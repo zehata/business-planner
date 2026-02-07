@@ -12,6 +12,8 @@ pub use {requirement::RequirementItem, transfer::TransferItem};
 
 #[allow(private_bounds)]
 pub trait EdgeItem: EdgeItemInternals {
+    fn new() -> Self;
+    
     fn create(item: Self, registry: &mut Registry) -> Uuid {
         let uuid = Uuid::new_v4();
         Self::get_item_registry_mut(registry).insert(uuid, item);
