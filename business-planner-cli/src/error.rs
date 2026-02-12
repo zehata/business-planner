@@ -15,6 +15,7 @@ pub enum NonError {
 #[derive(Debug)]
 pub enum Error {
     DialoguerError(DialoguerError),
+    ArgMissing(String),
     IoError(IoError),
     InvalidInput,
     NotFound(String),
@@ -32,6 +33,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::DialoguerError(error) => write!(f, "{}", error),
+            Error::ArgMissing(argument_name) => writeln!(f, "argument {} is missing", argument_name),
             Error::IoError(error) => write!(f, "{}", error),
             Error::ParseError(_) => write!(f, "Input is invalid"),
             Error::InvalidInput => write!(f, "Input is invalid"),

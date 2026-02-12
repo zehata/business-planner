@@ -21,9 +21,7 @@ impl ListMenu {
             ItemTypes::Recipe => session.list_graphs::<Recipe>().collect::<Vec<_>>(),
             ItemTypes::Ingredient => session.list::<IngredientItem>().collect::<Vec<_>>(),
             ItemTypes::Material => session.list::<MaterialItem>().collect::<Vec<_>>(),
-        }.iter().map(|(_, item_name)| {
-            *item_name
-        }).collect::<Vec<_>>();
+        };
         print_list(items);
         Ok(NonError::Continue)
     }

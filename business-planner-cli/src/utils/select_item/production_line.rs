@@ -75,6 +75,8 @@ impl ProductionLineArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
+                .alias(NAME_ARG_KEBAB_SHORT)
+                .alias(NAME_ARG_KEBAB_SHORTER)
                 .conflicts_with(ID_ARG_ID)
         ].into_iter()
     }
@@ -84,7 +86,9 @@ impl ProductionLineArg {
             return Ok(*id)
         }
 
-        let name = arg_matches.get_one::<String>(NAME_ARG_ID).expect("");
+        let Some(name) = arg_matches.get_one::<String>(NAME_ARG_ID) else {
+            return Err(Error::ArgMissing(ID_ARG_ID.to_string()))
+        };
         let mut candidates = session.get_graphs_by_name::<ProductionLine>(name);
 
         match (candidates.len()).cmp(&1) {

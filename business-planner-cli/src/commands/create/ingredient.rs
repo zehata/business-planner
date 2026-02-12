@@ -29,18 +29,19 @@ impl Menu for CreateIngredientMenu {
         };
         ingredient.set_name(&name);
 
-        session.create(ingredient);
+        let id = session.create(ingredient);
+        println!("Created ingredient \"{}\" ({})", name, id);
         Ok(NonError::Continue)
     }
 
     async fn non_interactive(arg_matches: &ArgMatches, session: &mut Session) -> PlannerResult {
         let mut ingredient = IngredientItem::new();
 
-        if let Some(name) = arg_matches.get_one::<String>("ingredient_name") {
-            ingredient.set_name(name);
-        }
+        let name = arg_matches.get_one::<String>("ingredient_name").expect("Clap to have filtered off invalid input");
+        ingredient.set_name(name);
 
-        session.create(ingredient);
+        let id = session.create(ingredient);
+        println!("Created ingredient \"{}\" ({})", name, id);
         Ok(NonError::Continue)
     }
 }

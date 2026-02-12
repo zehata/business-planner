@@ -1,8 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
 use business_planner::api::{
-    item::{DataSource, ExcelDataSource, PostgresqlDataSource, StoreItem},
-    session::Session,
+    graphs::ProductionLine, item::{DataSource, ExcelDataSource, PostgresqlDataSource, StoreItem}, session::Session
 };
 use clap::{Arg, ArgMatches, Command};
 use inquire::Text;
@@ -77,9 +76,8 @@ pub async fn create_store_non_interactive(
 ) -> Result<NonError, Error> {
     let mut store = StoreItem::new();
 
-    if let Some(name) = arg_matches.get_one::<String>("store_name") {
-        store.set_name(name);
-    }
+    let store_name = arg_matches.get_one::<String>("store_name").expect("Clap to have filtered off invalid input");
+    store.set_name(store_name);
 
     if let Some(timestamp_data_source) = arg_matches.get_one::<String>("timestamps_source") {
         match &timestamp_data_source[..] {
@@ -118,6 +116,16 @@ pub async fn create_store_non_interactive(
         }
     }
 
-    session.create(store);
+    let store_id = session.create(store);
+    println!("Created store \"{}\" ({})", store_name, store_id);
+
+    if
+        let Ok(production_line_id) = ProductionLineArg::parse_arg_matches(arg_matches, session)
+        && session.add_node::<ProductionLine>(&store_id, &production_line_id).is_ok()
+    {
+        let production_line_name = session.read_graph::<ProductionLine>(&production_line_id).expect("Graph to exist");
+        println!("Added store {} to production line {}", store_name, production_line_name);
+    };
+
     Ok(NonError::Continue)
 }

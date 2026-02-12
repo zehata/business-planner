@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-81bb1489.js";
+            window.path_to_searchindex_js = "searchindex-d4220db4.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-cc482056.js"></script>
@@ -176,40 +176,44 @@
                     <main>
                         <h2 id="start"><a class="header" href="#start">Start</a></h2>
 <p>Start the REPL with</p>
-<pre><code class="language-sh">business-planner-cli
+<pre><code class="language-sh">&gt; business-planner-cli
 </code></pre>
 <p>or start in interactive mode with</p>
-<pre><code class="language-sh">business-planner-cli --interactive
+<pre><code class="language-sh">&gt; business-planner-cli --interactive
 </code></pre>
-<h2 id="store"><a class="header" href="#store">Store</a></h2>
+<h2 id="creating-objects"><a class="header" href="#creating-objects">Creating objects</a></h2>
+<h3 id="store"><a class="header" href="#store">Store</a></h3>
 <p>Create a store with</p>
 <pre><code>&gt; create store --name "Cookie jar"
 Created store "Cookie jar" (8d055f2c-12f2-4197-8a85-c3d0001dc217)
 </code></pre>
-<h2 id="production-lines"><a class="header" href="#production-lines">Production lines</a></h2>
+<h3 id="production-lines"><a class="header" href="#production-lines">Production lines</a></h3>
 <p>Create a production line with</p>
 <pre><code>&gt; create production-line --name "Cookies"
 Created production line "Cookies" (3d1afc7f-9247-4606-9cda-b7c12fe810df)
 </code></pre>
 <hr>
+<p>Add a store to a production line with</p>
+<pre><code>&gt; add store --name "Cookie jar" --line Cookies
+</code></pre>
+<p>or create a store directly with</p>
+<pre><code>&gt; create store --name "Bread flour container" --line Cookies
+</code></pre>
+<h2 id="reading-objects"><a class="header" href="#reading-objects">Reading objects</a></h2>
 <p>List all production lines with</p>
 <pre><code>&gt; list production-line
-"Cookies" 3d1afc7f-9247-4606-9cda-b7c12fe810df
+Cookies 3d1afc7f-9247-4606-9cda-b7c12fe810df
 </code></pre>
 <p>or use the shorthand</p>
 <pre><code>&gt; list line
-"Cookies" 3d1afc7f-9247-4606-9cda-b7c12fe810df
+Cookies 3d1afc7f-9247-4606-9cda-b7c12fe810df
 </code></pre>
 <hr>
 <p>Read a production line with</p>
 <pre><code>&gt; read line --id 3d1afc7f-9247-4606-9cda-b7c12fe810df
 </code></pre>
-<hr>
-<p>Add a store to a production line with</p>
-<pre><code>&gt; add store --line-name Cookies --store-name "Cookie jar"
-</code></pre>
-<p>or create a store directly with</p>
-<pre><code>&gt; create store --line-name Cookies --store-name "Bread flour container"
+<p>or more conveniently</p>
+<pre><code>&gt; read line --name "Cookies"
 </code></pre>
 
                     </main>
