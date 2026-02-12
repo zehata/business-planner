@@ -9,6 +9,7 @@ static ID_ARG_ID: &str = "recipe_id";
 static ID_ARG_KEBAB: &str = "recipe-id";
 static NAME_ARG_ID: &str = "recipe_name";
 static NAME_ARG_KEBAB: &str = "recipe-name";
+static NAME_ARG_KEBAB_SHORT: &str = "recipe";
 
 pub struct RecipeArg {}
 
@@ -28,7 +29,7 @@ impl RecipeArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
-                .alias("name")
+                .aliases(["name", NAME_ARG_KEBAB_SHORT])
                 .conflicts_with(ID_ARG_ID)
                 .required_unless_present(ID_ARG_ID),
         ].into_iter()
@@ -48,6 +49,7 @@ impl RecipeArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
+                .alias(NAME_ARG_KEBAB_SHORT)
                 .conflicts_with(ID_ARG_ID)
                 .required_unless_present(ID_ARG_ID),
         ].into_iter()
@@ -66,6 +68,7 @@ impl RecipeArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
+                .alias(NAME_ARG_KEBAB_SHORT)
                 .conflicts_with(ID_ARG_ID)
         ].into_iter()
     }

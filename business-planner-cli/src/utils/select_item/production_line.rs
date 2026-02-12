@@ -32,9 +32,7 @@ impl ProductionLineArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
-                .alias("name")
-                .alias(NAME_ARG_KEBAB_SHORT)
-                .alias(NAME_ARG_KEBAB_SHORTER)
+                .aliases(["name", NAME_ARG_KEBAB_SHORT, NAME_ARG_KEBAB_SHORTER])
                 .conflicts_with(ID_ARG_ID)
                 .required_unless_present(ID_ARG_ID),
         ].into_iter()
@@ -55,8 +53,7 @@ impl ProductionLineArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
-                .alias(NAME_ARG_KEBAB_SHORT)
-                .alias(NAME_ARG_KEBAB_SHORTER)
+                .aliases([NAME_ARG_KEBAB_SHORT, NAME_ARG_KEBAB_SHORTER])
                 .conflicts_with(ID_ARG_ID)
                 .required_unless_present(ID_ARG_ID),
         ].into_iter()
@@ -75,8 +72,7 @@ impl ProductionLineArg {
                 ),
             Arg::new(NAME_ARG_ID)
                 .long(NAME_ARG_KEBAB)
-                .alias(NAME_ARG_KEBAB_SHORT)
-                .alias(NAME_ARG_KEBAB_SHORTER)
+                .aliases([NAME_ARG_KEBAB_SHORT, NAME_ARG_KEBAB_SHORTER])
                 .conflicts_with(ID_ARG_ID)
         ].into_iter()
     }

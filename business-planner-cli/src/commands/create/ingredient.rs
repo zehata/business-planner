@@ -50,7 +50,7 @@ impl Menu for CreateIngredientMenu {
             let Some(recipe_id) = recipe_id
             && session.add_node::<Recipe>(&ingredient_id, &recipe_id).is_ok()
         {
-            let recipe_name = session.read_graph::<Recipe>(&recipe_id).expect("Graph to exist");
+            let recipe_name = session.read_graph::<Recipe>(&recipe_id).expect("Graph to exist").get_name();
             println!("Added ingredient \"{}\" to recipe \"{}\"", ingredient_name, recipe_name);
         };
 
