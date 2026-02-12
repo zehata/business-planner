@@ -81,19 +81,19 @@ impl ProductionLineArg {
         ].into_iter()
     }
 
-    pub fn parse_arg_matches(arg_matches: &ArgMatches, session: &Session) -> Result<Uuid, Error> {
+    pub fn parse_arg_matches(arg_matches: &ArgMatches, session: &Session) -> Result<Option<Uuid>, Error> {
         if let Some(id) = arg_matches.get_one::<Uuid>(ID_ARG_ID) {
-            return Ok(*id)
+            return Ok(Some(*id))
         }
 
         let Some(name) = arg_matches.get_one::<String>(NAME_ARG_ID) else {
-            return Err(Error::ArgMissing(ID_ARG_ID.to_string()))
+            return Ok(None)
         };
         let mut candidates = session.get_graphs_by_name::<ProductionLine>(name);
 
         match (candidates.len()).cmp(&1) {
             Ordering::Less => Err(Error::NotFound(format!("production line with name {}", name))),
-            Ordering::Equal => Ok(*candidates.remove(0)),
+            Ordering::Equal => Ok(Some(*candidates.remove(0))),
             Ordering::Greater => Err(Error::MultipleFound(format!("production line with name {}", name))),
         }
     }

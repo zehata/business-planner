@@ -53,13 +53,13 @@ impl Menu for AddMenu {
         match item_type {
             Self::SubcommandsEnum::Store => {
                 let store_id = StoreArg::parse_arg_matches(subcommand_arg_matches, session)?;
-                let production_line_id = ProductionLineArg::parse_arg_matches(subcommand_arg_matches, session)?;
+                let production_line_id = ProductionLineArg::parse_arg_matches(subcommand_arg_matches, session)?.expect("Clap to have filtered off missing argument");
 
                 session.add_node::<ProductionLine>(&store_id, &production_line_id)?;
             },
             Self::SubcommandsEnum::Ingredient => {
                 let ingredient_id = IngredientArg::parse_arg_matches(subcommand_arg_matches, session)?;
-                let recipe_id = RecipeArg::parse_arg_matches(subcommand_arg_matches, session)?;
+                let recipe_id = RecipeArg::parse_arg_matches(subcommand_arg_matches, session)?.expect("Clap to have filtered off missing argument");
 
                 session.add_node::<Recipe>(&ingredient_id, &recipe_id)?;
             },

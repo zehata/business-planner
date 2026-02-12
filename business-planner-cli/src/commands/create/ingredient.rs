@@ -40,15 +40,18 @@ impl Menu for CreateIngredientMenu {
         let ingredient_name = arg_matches.get_one::<String>("ingredient_name").expect("Clap to have filtered off invalid input");
         ingredient.set_name(ingredient_name);
 
-        let ingredient_id = session.create(ingredient);
+
+        let recipe_id = RecipeArg::parse_arg_matches(arg_matches, session)?;
+
+        let ingredient_id = session.create(ingredient);    
         println!("Created ingredient \"{}\" ({})", ingredient_name, ingredient_id);
 
         if
-            let Ok(recipe_id) = RecipeArg::parse_arg_matches(arg_matches, session)
+            let Some(recipe_id) = recipe_id
             && session.add_node::<Recipe>(&ingredient_id, &recipe_id).is_ok()
         {
             let recipe_name = session.read_graph::<Recipe>(&recipe_id).expect("Graph to exist");
-            println!("Added ingredient \"{}\" to recipe {}", ingredient_name, recipe_name);
+            println!("Added ingredient \"{}\" to recipe \"{}\"", ingredient_name, recipe_name);
         };
 
         Ok(NonError::Continue)

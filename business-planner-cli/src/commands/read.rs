@@ -75,7 +75,7 @@ impl Menu for ReadMenu {
 
         match item_type {
             Self::SubcommandsEnum::ProductionLine => {
-                let id = ProductionLineArg::parse_arg_matches(subcommand_arg_matches, session)?;
+                let id = ProductionLineArg::parse_arg_matches(subcommand_arg_matches, session)?.expect("Clap to have filtered off missing argument");
                 println!("{}", session.read_graph::<ProductionLine>(&id).expect(""));
             },
             Self::SubcommandsEnum::Store => {
@@ -83,7 +83,7 @@ impl Menu for ReadMenu {
                 println!("{}", session.read::<StoreItem>(&id).expect(""));
             },
             Self::SubcommandsEnum::Recipe => {
-                let id = RecipeArg::parse_arg_matches(subcommand_arg_matches, session)?;
+                let id = RecipeArg::parse_arg_matches(subcommand_arg_matches, session)?.expect("Clap to have filtered off missing argument");
                 println!("{}", session.read_graph::<Recipe>(&id).expect(""));
             },
             Self::SubcommandsEnum::Ingredient => {

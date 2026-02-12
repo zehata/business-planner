@@ -74,7 +74,7 @@ impl Menu for DeleteMenu {
 
         match item_type {
             Self::SubcommandsEnum::ProductionLine => {
-                let id = ProductionLineArg::parse_arg_matches(subcommand_arg_matches, session)?;
+                let id = ProductionLineArg::parse_arg_matches(subcommand_arg_matches, session)?.expect("Clap to have filtered off missing argument");
                 match session.delete_graph::<ProductionLine>(&id) {
                     Some(production_line) => {
                         println!("Deleted production line \"{}\" ({})", production_line.get_name(), id);
@@ -92,7 +92,7 @@ impl Menu for DeleteMenu {
                 };
             },
             Self::SubcommandsEnum::Recipe => {
-                let id = RecipeArg::parse_arg_matches(subcommand_arg_matches, session)?;
+                let id = RecipeArg::parse_arg_matches(subcommand_arg_matches, session)?.expect("Clap to have filtered off missing argument");
                 match session.delete_graph::<Recipe>(&id) {
                     Some(recipe) => {
                         println!("Deleted recipe \"{}\" ({})", recipe.get_name(), id);

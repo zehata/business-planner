@@ -7,8 +7,7 @@ use clap::{Arg, ArgMatches, Command};
 use inquire::Text;
 
 use crate::{
-    Error, NonError,
-    utils::{Menu, NoSubcommands, PlannerResult, ProductionLineArg, StoreArg},
+    Error, NonError, utils::{Menu, NoSubcommands, PlannerResult, ProductionLineArg, StoreArg}
 };
 
 pub struct CreateStoreMenu {}
@@ -116,15 +115,17 @@ pub async fn create_store_non_interactive(
         }
     }
 
-    let store_id = session.create(store);
+    let production_line_id = ProductionLineArg::parse_arg_matches(arg_matches, session)?;
+
+    let store_id = session.create(store);    
     println!("Created store \"{}\" ({})", store_name, store_id);
 
     if
-        let Ok(production_line_id) = ProductionLineArg::parse_arg_matches(arg_matches, session)
+        let Some(production_line_id) = production_line_id
         && session.add_node::<ProductionLine>(&store_id, &production_line_id).is_ok()
     {
         let production_line_name = session.read_graph::<ProductionLine>(&production_line_id).expect("Graph to exist");
-        println!("Added store \"{}\" to production line {}", store_name, production_line_name);
+        println!("Added store \"{}\" to production line \"{}\"", store_name, production_line_name);
     };
 
     Ok(NonError::Continue)
