@@ -9,7 +9,7 @@ use crate::{
     item::{StoreItem, TransferItem},
 };
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProductionLine {
     data: GraphData,
     graph: DiGraphMap<Uuid, Uuid>,
@@ -18,6 +18,13 @@ pub struct ProductionLine {
 impl Graph for ProductionLine {
     type Node = StoreItem;
     type Edge = TransferItem;
+
+    fn new(data: GraphData) -> Self {
+        Self {
+            data,
+            graph: DiGraphMap::new(),
+        }
+    }
 
     fn get_name(&self) -> &str {
         &self.data.name

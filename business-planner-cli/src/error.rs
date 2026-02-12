@@ -5,6 +5,7 @@ pub use clap::Error as ClapError;
 pub use inquire::InquireError;
 pub use strum::ParseError;
 pub use uuid::Error as UuidError;
+pub use dialoguer::Error as DialoguerError;
 
 pub enum NonError {
     Continue,
@@ -13,8 +14,11 @@ pub enum NonError {
 
 #[derive(Debug)]
 pub enum Error {
+    DialoguerError(DialoguerError),
     IoError(IoError),
     InvalidInput,
+    NotFound(String),
+    MultipleFound(String),
     ParseError(ParseError),
     UserCancelled,
     BusinessPlannerError(BusinessPlannerError),
@@ -27,9 +31,12 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Error::DialoguerError(error) => write!(f, "{}", error),
             Error::IoError(error) => write!(f, "{}", error),
             Error::ParseError(_) => write!(f, "Input is invalid"),
             Error::InvalidInput => write!(f, "Input is invalid"),
+            Error::NotFound(item) => write!(f, "No {} found", item),
+            Error::MultipleFound(item) => write!(f, "Multiple {} found", item),
             Error::UserCancelled => write!(f, "Cancelled"),
             Error::BusinessPlannerError(business_planner_error) => {
                 write!(f, "{}", business_planner_error)
@@ -39,6 +46,12 @@ impl fmt::Display for Error {
             Error::UuidError(uuid_error) => write!(f, "{uuid_error}"),
             Error::ErroneousShlexInput => write!(f, "Erroneous input provided to command splitter"),
         }
+    }
+}
+
+impl From<DialoguerError> for Error {
+    fn from(value: DialoguerError) -> Self {
+        Error::DialoguerError(value)
     }
 }
 

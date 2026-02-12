@@ -14,6 +14,8 @@ pub use {ingredient::IngredientItem, material::MaterialItem, store::StoreItem};
 
 #[allow(private_bounds)]
 pub trait Item: ItemInternals {
+    fn get_name(&self) -> &str;
+
     fn create(item: Self, registry: &mut Registry) -> Uuid {
         let uuid = Uuid::new_v4();
         Self::get_item_registry_mut(registry).insert(uuid, item);
@@ -28,6 +30,15 @@ pub trait Item: ItemInternals {
         Self::get_item_registry(registry).get(id)
     }
 
+    fn get_by_name<'a>(name: &str, registry: &'a Registry) -> Vec<&'a Uuid> where Self: 'a {
+        Self::get_item_registry(registry).iter().filter_map(|(id, item)| {
+            match item.get_name() == name {
+                true => Some(id),
+                false => None
+            }
+        }).collect::<Vec<_>>()
+    }
+
     fn update(id: &Uuid, registry: &mut Registry, item: Self) {
         Self::get_item_registry_mut(registry).insert(*id, item);
     }
@@ -36,7 +47,7 @@ pub trait Item: ItemInternals {
         Self::get_item_registry_mut(persistent_data.get_registry_mut()).remove(id)
     }
 
-    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, Option<&str>)>;
+    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, &str)>;
 }
 
 #[allow(private_bounds)]

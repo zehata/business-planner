@@ -19,7 +19,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct IngredientItem {
-    name: Option<String>,
+    name: String,
     material: Option<Uuid>,
     associated_stores: HashSet<Uuid>,
 }
@@ -29,12 +29,12 @@ impl IngredientItem {
         Self::default()
     }
 
-    pub fn get_name(&self) -> Option<&str> {
-        self.name.as_deref()
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 
     pub fn set_name(&mut self, name: &str) {
-        self.name = Some(name.to_string());
+        self.name = name.to_string();
     }
 
     pub fn get_material(&self) -> Option<&Uuid> {
@@ -55,6 +55,10 @@ impl IngredientItem {
 }
 
 impl Item for IngredientItem {
+    fn get_name(&self) -> &str {
+        self.get_name()
+    }
+
     fn update(id: &Uuid, registry: &mut Registry, item: Self) {
         let material = item.get_material().cloned();
         let previous_ingredient = Self::get_item_registry_mut(registry).insert(*id, item);
@@ -84,7 +88,7 @@ impl Item for IngredientItem {
         <Self as NodeItem>::delete(id, persistent_data)
     }
 
-    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
+    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, &str)> {
         registry
             .ingredients
             .iter()

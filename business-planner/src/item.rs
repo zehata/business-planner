@@ -50,11 +50,15 @@ impl Registry {
         T::read(id, self)
     }
 
+    pub fn get_by_name<'a, T: Item + 'a>(&'a self, name: &str) -> Vec<&'a Uuid> {
+        T::get_by_name(name, self)
+    }
+
     pub fn update<T: Item>(&mut self, id: &Uuid, item: T) {
         T::update(id, self, item)
     }
 
-    pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
+    pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, &str)> {
         T::list(self)
     }
 }

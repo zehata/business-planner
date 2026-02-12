@@ -14,7 +14,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct MaterialItem {
-    name: Option<String>,
+    name: String,
     associated_ingredients: HashSet<Uuid>,
 }
 
@@ -23,12 +23,12 @@ impl MaterialItem {
         MaterialItem::default()
     }
 
-    pub fn get_name(&self) -> Option<&str> {
-        self.name.as_deref()
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 
     pub fn set_name(&mut self, name: &str) {
-        self.name = Some(name.to_string());
+        self.name = name.to_string();
     }
 
     pub(crate) fn add_associated_ingredient(&mut self, id: &Uuid) {
@@ -58,6 +58,10 @@ impl ItemObject for MaterialItem {
 impl ItemInternals for MaterialItem {}
 
 impl Item for MaterialItem {
+    fn get_name(&self) -> &str {
+        self.get_name()
+    }
+
     fn delete(id: &Uuid, persistent_data: &mut PersistentData) -> Option<Self> {
         let registry = persistent_data.get_registry_mut();
         let material = registry.materials.remove(id);
@@ -71,7 +75,7 @@ impl Item for MaterialItem {
         material
     }
 
-    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
+    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, &str)> {
         registry
             .materials
             .iter()
@@ -81,7 +85,7 @@ impl Item for MaterialItem {
 
 impl fmt::Display for MaterialItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let name = self.get_name().unwrap_or("");
+        let name = self.get_name();
         write!(f, "Material\nname:{}", name)
     }
 }

@@ -18,7 +18,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct StoreItem {
-    name: Option<String>,
+    name: String,
     ingredient: Option<Uuid>,
     timestamps: Option<DataSource>,
     // stock_levels: Option<DataSource>,
@@ -29,12 +29,12 @@ impl StoreItem {
         Self::default()
     }
 
-    pub fn get_name(&self) -> Option<&str> {
-        self.name.as_deref()
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 
     pub fn set_name(&mut self, name: &str) {
-        self.name = Some(name.to_string());
+        self.name = name.to_string();
     }
 
     pub fn get_ingredient(&self) -> Option<&Uuid> {
@@ -61,6 +61,10 @@ impl StoreItem {
 impl ItemInternals for StoreItem {}
 
 impl Item for StoreItem {
+    fn get_name(&self) -> &str {
+        self.get_name()
+    }
+
     fn update(id: &Uuid, registry: &mut Registry, item: Self) {
         let ingredient = item.get_ingredient().cloned();
         let previous_store = Self::get_item_registry_mut(registry).insert(*id, item);
@@ -86,7 +90,7 @@ impl Item for StoreItem {
         }
     }
 
-    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
+    fn list(registry: &Registry) -> impl Iterator<Item = (&Uuid, &str)> {
         registry
             .stores
             .iter()
@@ -124,7 +128,7 @@ impl NodeItemInternals for StoreItem {
 
 impl Display for StoreItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let name: &str = self.get_name().unwrap_or("");
+        let name: &str = self.get_name();
         let timestamps_range = match self.get_timestamps_range() {
             Some(data_source) => &format!("{}", data_source),
             None => "",

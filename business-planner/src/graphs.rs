@@ -22,6 +22,12 @@ pub struct GraphData {
 }
 
 impl GraphData {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+        }
+    }
+
     pub fn get_name(&self) -> &str {
         &self.name
     }
@@ -44,9 +50,9 @@ pub struct Graphs {
 }
 
 impl Graphs {
-    pub fn create<T: Graph>(&mut self) -> Uuid {
+    pub fn create<T: Graph>(&mut self, data: GraphData) -> Uuid {
         let uuid = Uuid::new_v4();
-        T::get_graphs_mut(self).insert(uuid, T::new());
+        T::get_graphs_mut(self).insert(uuid, T::new(data));
         uuid
     }
 
@@ -54,13 +60,24 @@ impl Graphs {
         Some(T::get_graphs(self).get(id)?.get_data())
     }
 
-    pub fn update<T: Graph>(&mut self, id: &Uuid, data: GraphData) {
-        let entry = match T::get_graphs_mut(self).entry(*id) {
-            Entry::Occupied(entry) => entry.into_mut(),
-            Entry::Vacant(entry) => entry.insert(T::new()),
-        };
+    pub fn get_by_name<'a, T: Graph + 'a>(&'a self, name: &str) -> Vec<&'a Uuid> {
+        T::get_graphs(self).iter().filter_map(|(id, graph)| {
+            match graph.get_name() == name {
+                true => Some(id),
+                false => None
+            }
+        }).collect::<Vec<_>>()
+    }
 
-        entry.set_data(data);
+    pub fn update<T: Graph>(&mut self, id: &Uuid, data: GraphData) {
+        match T::get_graphs_mut(self).entry(*id) {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => entry.insert(T::new(data)),
+        };
+    }
+
+    pub fn get<T: Graph>(&self, id: &Uuid) -> Option<&T> {
+        T::get_graphs(self).get(id)
     }
 
     pub fn get_mut<T: Graph>(&mut self, id: &Uuid) -> Option<&mut T> {
@@ -71,18 +88,18 @@ impl Graphs {
         T::get_graphs_mut(self).remove(id)
     }
 
-    pub fn list<'a, T: Graph + 'a>(&'a self) -> impl Iterator<Item = (&'a Uuid, &'a T)> {
-        T::get_graphs(self).iter()
+    pub fn list<'a, T: Graph + 'a>(&'a self) -> impl Iterator<Item = (&'a Uuid, &'a str)> {
+        T::get_graphs(self).iter().map(|(graph_id, graph)| {
+            (graph_id, graph.get_name())
+        })
     }
 }
 
-pub trait Graph: Sized + Default {
+pub trait Graph: Sized {
     type Node: NodeItem;
     type Edge: EdgeItem;
 
-    fn new() -> Self {
-        Self::default()
-    }
+    fn new(data: GraphData) -> Self;
 
     fn get_name(&self) -> &str {
         self.get_data().get_name()
@@ -110,6 +127,10 @@ pub trait Graph: Sized + Default {
             return Err(GraphObjectMissing::Node)?;
         }
         Ok(())
+    }
+
+    fn list_nodes(&self) -> Vec<Uuid> {
+        self.get_graph_map().nodes().collect::<Vec<_>>()
     }
 
     fn add_edge(

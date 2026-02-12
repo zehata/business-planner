@@ -7,12 +7,17 @@ use crate::{
 use uuid::Uuid;
 
 impl Session {
-    pub fn create_graph<T: Graph>(&mut self) -> Uuid {
-        self.persistent_data.graphs.create::<T>()
+    pub fn create_graph<T: Graph>(&mut self, name: &str) -> Uuid {
+        let graph_data = GraphData::new(name);
+        self.persistent_data.graphs.create::<T>(graph_data)
     }
 
     pub fn read_graph<'a, T: Graph + 'a>(&'a self, id: &Uuid) -> Option<&'a GraphData> {
         self.persistent_data.graphs.read::<T>(id)
+    }
+
+    pub fn get_graphs_by_name<'a, T: Graph + 'a>(&'a self, name: &str) -> Vec<&'a Uuid> {
+        self.persistent_data.graphs.get_by_name::<T>(name)
     }
 
     pub fn update_graph<T: Graph>(&mut self, id: &Uuid, data: GraphData) {
@@ -23,7 +28,7 @@ impl Session {
         self.persistent_data.graphs.delete::<T>(id)
     }
 
-    pub fn list_graphs<'a, T: Graph + 'a>(&'a self) -> impl Iterator<Item = (&'a Uuid, &'a T)> {
+    pub fn list_graphs<'a, T: Graph + 'a>(&'a self) -> impl Iterator<Item = (&'a Uuid, &'a str)> {
         self.persistent_data.graphs.list::<T>()
     }
 
@@ -43,19 +48,28 @@ impl Session {
 
     pub fn remove_node<G: Graph>(
         &mut self,
-        node_id: &Uuid,
         graph_id: &Uuid,
+        node_id: &Uuid,
     ) -> Result<(), Error> {
         let graph = Graphs::get_mut::<G>(&mut self.persistent_data.graphs, graph_id)
             .ok_or(GraphsError::GraphObjectMissing(GraphObjectMissing::Graph))?;
         Ok(graph.remove_node(node_id)?)
     }
 
+    pub fn list_nodes<G: Graph>(
+        &self,
+        graph_id: &Uuid,
+    ) -> Result<Vec<Uuid>, Error> {
+        let graph = Graphs::get::<G>(&self.persistent_data.graphs, graph_id)
+            .ok_or(GraphsError::GraphObjectMissing(GraphObjectMissing::Graph))?;
+        Ok(graph.list_nodes())
+    }
+
     pub fn add_edge<G: Graph>(
         &mut self,
+        graph_id: &Uuid,
         from_node_id: &Uuid,
         to_node_id: &Uuid,
-        graph_id: &Uuid,
         item: G::Edge,
     ) -> Result<(), Error> {
         let edge_id = G::Edge::create(item, &mut self.persistent_data.registry);
@@ -66,9 +80,9 @@ impl Session {
 
     pub fn remove_edge<G: Graph>(
         &mut self,
+        graph_id: &Uuid,
         from_node_id: &Uuid,
         to_node_id: &Uuid,
-        graph_id: &Uuid,
     ) -> Result<(), Error> {
         let graph = Graphs::get_mut::<G>(&mut self.persistent_data.graphs, graph_id)
             .ok_or(GraphsError::GraphObjectMissing(GraphObjectMissing::Graph))?;

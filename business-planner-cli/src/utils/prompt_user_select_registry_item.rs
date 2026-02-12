@@ -3,7 +3,7 @@ use inquire::{InquireError, Select};
 use uuid::Uuid;
 
 pub async fn prompt_user_select_registry_item<'a, T>(
-    session: &'a mut Session,
+    session: &'a Session,
     message: &str,
 ) -> Result<&'a Uuid, InquireError>
 where

@@ -1,24 +1,22 @@
-use std::{io::{Write, stdin, stdout}, path::PathBuf};
+use std::path::PathBuf;
 
 use business_planner::api::session::{Session, create_session, load_session};
-use clap::{Arg, ArgAction, Command};
+use clap::{Arg, ArgAction, Command, ValueEnum};
 
-pub mod error;
-pub mod plugins;
-pub mod registry;
-pub mod save;
-pub mod utils;
-pub mod graphs;
+mod error;
+mod commands;
+mod utils;
 
+use dialoguer::{BasicHistory, Input, console::style, theme::ColorfulTheme};
 use enum_map::{Enum, EnumMap, enum_map};
 pub use error::{Error, NonError};
-use strum_macros::{Display, EnumString};
+use strum_macros::{Display, EnumIter, EnumString};
 
 use crate::{
-    plugins::PluginsMenu,
-    registry::RegistryMenu,
-    save::SaveMenu,
-    utils::{Menu, PlannerResult, Submenu, get_command_matches},
+    // plugins::PluginsMenu,
+    // registry::RegistryMenu,
+    // save::SaveMenu,
+    commands::{AddMenu, CreateMenu, DeleteMenu, ListMenu, PluginsMenu, ReadMenu, RemoveMenu, SaveMenu, UpdateMenu}, utils::{Completer, Menu, NoSubcommands, PlannerResult, Submenu, get_command_matches}
 };
 
 fn entry_cli() -> Command {
@@ -53,46 +51,80 @@ async fn main() {
         _ => create_session(),
     };
     let is_interactive = matches.get_one::<bool>("interactive").unwrap_or(&false);
+    match is_interactive {
+        true => interactive(&mut session).await,
+        false => non_interactive(&mut session).await,
+    }
+}
+
+fn parse_result(planner_result: PlannerResult, user_requested_exit: &mut bool) {
+    match planner_result {
+        Ok(NonError::Exit) => {
+            *user_requested_exit = true;
+        }
+        Ok(NonError::Continue) => {}
+        Err(Error::UserCancelled) => {}
+        Err(error) => println!("{}", error),
+    };
+}
+
+async fn interactive(session: &mut Session) {
     let mut user_requested_exit = false;
     while !user_requested_exit {
-        let command = MainMenu::get_command();
-        let result = main_loop(*is_interactive, command, &mut session).await;
+        let planner_result = MainMenu::interactive(session).await;
+        parse_result(planner_result, &mut user_requested_exit);
+    }
+}
 
-        match result {
-            Ok(NonError::Exit) => {
-                user_requested_exit = true;
-            }
-            Ok(NonError::Continue) => {}
-            Err(Error::UserCancelled) => {}
-            Err(error) => println!("{}", error),
+async fn non_interactive(session: &mut Session) {
+    let command = MainMenu::get_command();
+    let completer = Completer::new(&command);
+    let mut history = BasicHistory::new();
+
+    let theme = ColorfulTheme {
+        prompt_suffix: style(">".to_string()).for_stderr().black().bright(),
+        ..Default::default()
+    };
+
+    let mut user_requested_exit = false;
+    while !user_requested_exit {
+        let input = Input::<String>::with_theme(&theme)
+            .with_prompt("business-planner")
+            .history_with(&mut history)
+            .completion_with(&completer)
+            .interact_text();
+
+        let planner_result = match input {
+            Ok(input) => non_interactive_loop(session, &command, input).await,
+            Err(error) => Err(Error::DialoguerError(error)),
         };
+
+        parse_result(planner_result, &mut user_requested_exit);
     }
 }
 
-async fn main_loop(is_interactive: bool, command: Command, session: &mut Session) -> PlannerResult {
-    match is_interactive {
-        true => MainMenu::interactive(session).await,
-        false => {
-            print!("> ");
-            let _ = stdout().flush();
-
-            let mut buffer = String::new();
-            let _ = stdin().read_line(&mut buffer);
-            let arg_matches = get_command_matches(&buffer, command)?;
-            MainMenu::non_interactive(&arg_matches, session).await
-        }
-    }
+async fn non_interactive_loop(session: &mut Session, command: &Command, line: String) -> PlannerResult {
+    let arg_matches = get_command_matches(&line, command)?;
+    MainMenu::non_interactive(&arg_matches, session).await
 }
 
-#[derive(Debug, Display, Enum, EnumString)]
+#[derive(Clone, Debug, Display, Enum, EnumIter, EnumString, ValueEnum)]
 enum MainMenu {
+    Create,
+    Read,
+    Delete,
+    Update,
+    List,
+    Add,
+    Remove,
     Plugins,
-    Registry,
     Save,
     Exit,
 }
 
 impl Menu for MainMenu {
+    type SubcommandsEnum = Self;
+
     fn get_command() -> Command {
         Command::new("")
             .no_binary_name(true)
@@ -103,18 +135,25 @@ impl Menu for MainMenu {
 
     fn get_submenus() -> EnumMap<Self, Submenu> {
         enum_map! {
+            Self::Create => CreateMenu::get_submenu(),
+            Self::Read => ReadMenu::get_submenu(),
+            Self::Update => UpdateMenu::get_submenu(),
+            Self::Delete => DeleteMenu::get_submenu(),
+            Self::List => ListMenu::get_submenu(),
+            Self::Add => AddMenu::get_submenu(),
+            Self::Remove => RemoveMenu::get_submenu(),
             Self::Plugins => PluginsMenu::get_submenu(),
-            Self::Registry => RegistryMenu::get_submenu(),
             Self::Save => SaveMenu::get_submenu(),
             Self::Exit => ExitMenu::get_submenu(),
         }
     }
 }
 
-#[derive(Debug, Display, Enum, EnumString)]
-enum ExitMenu {}
+struct ExitMenu {}
 
 impl Menu for ExitMenu {
+    type SubcommandsEnum = NoSubcommands;
+
     fn get_command() -> Command {
         Command::new("exit")
     }

@@ -14,6 +14,10 @@ impl Session {
         self.persistent_data.registry.read::<T>(id)
     }
 
+    pub fn get_by_name<'a, T: Item + 'a>(&'a self, name: &str) -> Vec<&'a Uuid> {
+        self.persistent_data.registry.get_by_name::<T>(name)
+    }
+
     pub fn update<T: Item>(&mut self, id: &Uuid, item: T) {
         self.persistent_data.registry.update::<T>(id, item)
     }
@@ -22,7 +26,7 @@ impl Session {
         self.persistent_data.delete::<T>(id);
     }
 
-    pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, Option<&str>)> {
+    pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, &str)> {
         self.persistent_data.registry.list::<T>()
     }
 }

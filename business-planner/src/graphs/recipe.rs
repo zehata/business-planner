@@ -19,6 +19,13 @@ impl Graph for Recipe {
     type Node = IngredientItem;
     type Edge = RequirementItem;
 
+    fn new(data: GraphData) -> Self {
+        Self {
+            data,
+            graph: DiGraphMap::new(),
+        }
+    }
+
     fn get_name(&self) -> &str {
         &self.data.name
     }
