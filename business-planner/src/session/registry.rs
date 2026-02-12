@@ -22,8 +22,8 @@ impl Session {
         self.persistent_data.registry.update::<T>(id, item)
     }
 
-    pub fn delete<T: Item>(&mut self, id: &Uuid) {
-        self.persistent_data.delete::<T>(id);
+    pub fn delete<T: Item>(&mut self, id: &Uuid) -> Option<T> {
+        self.persistent_data.delete::<T>(id)
     }
 
     pub fn list<T: Item>(&self) -> impl Iterator<Item = (&Uuid, &str)> {

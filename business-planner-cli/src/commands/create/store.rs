@@ -124,7 +124,7 @@ pub async fn create_store_non_interactive(
         && session.add_node::<ProductionLine>(&store_id, &production_line_id).is_ok()
     {
         let production_line_name = session.read_graph::<ProductionLine>(&production_line_id).expect("Graph to exist");
-        println!("Added store {} to production line {}", store_name, production_line_name);
+        println!("Added store \"{}\" to production line {}", store_name, production_line_name);
     };
 
     Ok(NonError::Continue)

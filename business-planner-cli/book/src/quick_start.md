@@ -8,7 +8,7 @@ or start in interactive mode with
 > business-planner-cli --interactive
 ```
 
-## Creating objects
+## Adding and creating objects
 ### Store
 Create a store with
 ```
@@ -32,7 +32,7 @@ or create a store directly with
 > create store --name "Bread flour container" --line Cookies
 ```
 
-## Reading objects
+## Listing and reading objects
 List all production lines with
 ```
 > list production-line
@@ -51,4 +51,10 @@ Read a production line with
 or more conveniently
 ```
 > read line --name "Cookies"
+```
+
+## Deleting objects
+Delete store with
+```
+> delete store --name "Bread flour container"
 ```
